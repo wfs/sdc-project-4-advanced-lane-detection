@@ -4,36 +4,37 @@ import matplotlib.image as mpimg
 import glob
 import cv2
 
-"""
-Tips and tricks for the project
-"""
+""" Structure """
+# TODO 0. Instantiate Classes
+# lane_lines
+#
 
-"""
-Camera calibration : set chessboard size to 9x6, not 8x6 as in the lesson.
-"""
+# TODO Keeping track of recent measurements : instantiate lane_lines.Line for both left and right lane lines to keep track of recent values from previously processed images.
 
-"""
-Do your curvature values make sense?
-"""
+""" Computer Vision Setup """
+# TODO 1. Calibrate Camera
+# TODO set chessboard size to 9x6, not 8x6 as in the lesson.
 
-"""
-Finding your offset from lane centre : assume camera is mounted at centre of car, so lane centre is at
-midpoint at bottom of image.
-"""
+# TODO 2. Correct Distortion
 
-"""
-Keeping track of recent measurements : instantiate lane_lines.Line for both left and right lane lines
-to keep track of recent values from previously processed images.
-"""
 
-"""
-Automatically determining if your detected lines are the real thing :
+# TODO 3. Colour and Gradient Thresholds
 
-1. Check curvature : that both left and right lines have similar curvature.
-2. Check separation : that they are separated by approx the correct distance horizontally
-3. Check parallel : that they are roughly parallel.
-"""
 
+# TODO 4. Transform Perspective
+
+""" Find Real Lane Lines : Base Measurement """
+# TODO 5. Detect Lane Lines
+
+# TODO 6. Determine Lane Curvature
+# TODO TEST : Automatically determining if your detected lines are the real thing :
+# TODO 6.1. Check curvature : that both left and right lines have similar curvature.
+# TODO 6.2. Check separation : that they are separated by approx the correct distance horizontally
+# TODO 6.3. Check parallel : that they are roughly parallel.
+# TODO 6.4. Finding your offset from lane centre : assume camera is mounted at centre of car, so lane centre is at midpoint at bottom of image.
+
+""" Find Real Lane Lines : Next Measurement """
+# TODO 7. search within a window around the previous detection, then perform TEST
 """
 After determining you found the lines, where to look in the next frame :
 simply search within a window around the previous detection
