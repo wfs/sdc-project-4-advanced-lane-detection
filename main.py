@@ -5,18 +5,20 @@ import glob
 import cv2
 
 """ Structure """
-# TODO 0. Instantiate Classes
-# lane_lines
-#
+import calibrated_camera as camera
+import lane_lines as lines
 
+# lane_lines
+# TODO 0. Instantiate Class lines
 # TODO Keeping track of recent measurements : instantiate lane_lines.Line for both left and right lane lines to keep track of recent values from previously processed images.
 
 """ Computer Vision Setup """
-# TODO 1. Calibrate Camera
-# TODO set chessboard size to 9x6, not 8x6 as in the lesson.
+# 1. Calibrate Camera and Correct Distortion
 
-# TODO 2. Correct Distortion
-
+# points = camera.Points()
+# points.map_3d_object_to_2d_image_points(store=False, display=False)  # To test, set params (store=False, display=True)
+# print("points.imgpoints : ", points.imgpoints)  # 9x6 = 54 x,y coordinate lists per image array.
+camera.calibrate(show_undistored_img=False)
 
 # TODO 3. Colour and Gradient Thresholds
 
@@ -72,21 +74,21 @@ you have fit the lines with a polynomial and have arrays called ploty, left_fitx
 represent the x and y pixel values of the lines.
 You can then project those lines onto the original image as follows:
 """
-# Create an image to draw the lines on
-warp_zero = np.zeros_like(warped).astype(np.uint8)
-color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
-
-# Recast the x and y points into usable format for cv2.fillPoly()
-pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
-pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
-pts = np.hstack((pts_left, pts_right))
-
-# Draw the lane onto the warped blank image
-cv2.fillPoly(color_warp, np.int_([pts]), (0,255, 0))
-
-# Warp the blank back to original image space using inverse perspective matrix (Minv)
-newwarp = cv2.warpPerspective(color_warp, Minv, (image.shape[1], image.shape[0]))
-# Combine the result with the original image
-result = cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
-plt.imshow(result)
+# # Create an image to draw the lines on
+# warp_zero = np.zeros_like(warped).astype(np.uint8)
+# color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+#
+# # Recast the x and y points into usable format for cv2.fillPoly()
+# pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
+# pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+# pts = np.hstack((pts_left, pts_right))
+#
+# # Draw the lane onto the warped blank image
+# cv2.fillPoly(color_warp, np.int_([pts]), (0,255, 0))
+#
+# # Warp the blank back to original image space using inverse perspective matrix (Minv)
+# newwarp = cv2.warpPerspective(color_warp, Minv, (image.shape[1], image.shape[0]))
+# # Combine the result with the original image
+# result = cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
+# plt.imshow(result)
 
