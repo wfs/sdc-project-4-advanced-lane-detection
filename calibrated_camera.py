@@ -16,7 +16,7 @@ class Points:
 
     def map_3d_object_to_2d_image_points(self, store=False, display=False):
         """
-        Creates ndarray representing reference chessboard 3D coordinates,
+        Creates ndarray representing reference 9 col x 6 x row chessboard 3D coordinates,
         find the chessboard corner coordinates in each calibration (aka skewed) example image,
         and collect in imgpoints list.
 
@@ -87,5 +87,5 @@ def calibrate(show_undistored_img=False):
         # ax2.imshow(dst)
         # ax2.set_title('Undistorted Image', fontsize=30)
         cv2.imshow('dst', dst)
-        cv2.waitKey(1000)
+        cv2.waitKey(1500)
         cv2.destroyAllWindows()

@@ -6,11 +6,8 @@ import cv2
 
 """ Structure """
 import calibrated_camera as camera
-import lane_lines as lines
-
-# lane_lines
-# TODO 0. Instantiate Class lines
-# TODO Keeping track of recent measurements : instantiate lane_lines.Line for both left and right lane lines to keep track of recent values from previously processed images.
+import gradient_image
+import lane_lines
 
 """ Computer Vision Setup """
 # 1. Calibrate Camera and Correct Distortion
@@ -20,13 +17,28 @@ import lane_lines as lines
 # print("points.imgpoints : ", points.imgpoints)  # 9x6 = 54 x,y coordinate lists per image array.
 camera.calibrate(show_undistored_img=False)
 
+
+# TODO 2. Iterate over each frame in the video, applying all steps below until detect lane lines
+video_frame = image_to_test_on = gradient_image.BinaryMask.TEST_IMAGE
+
+
 # TODO 3. Colour and Gradient Thresholds
+# 3.2 Apply colour threshold
+
+# 3.2. Generate gradient direction binary mask
+sobel_kernel_size = 15
+threshold = (0.7, 1.3)  # param tuple
+binary_image = gradient_image.BinaryMask.dir_threshold(video_frame, sobel_kernel_size, threshold)
+# image_to_test_on = gradient_image.BinaryMask.TEST_IMAGE
+gradient_image.BinaryMask.view_mask_test(video_frame, sobel_kernel_size, threshold)
 
 
 # TODO 4. Transform Perspective
 
+
 """ Find Real Lane Lines : Base Measurement """
 # TODO 5. Detect Lane Lines
+
 
 # TODO 6. Determine Lane Curvature
 # TODO TEST : Automatically determining if your detected lines are the real thing :
@@ -34,6 +46,10 @@ camera.calibrate(show_undistored_img=False)
 # TODO 6.2. Check separation : that they are separated by approx the correct distance horizontally
 # TODO 6.3. Check parallel : that they are roughly parallel.
 # TODO 6.4. Finding your offset from lane centre : assume camera is mounted at centre of car, so lane centre is at midpoint at bottom of image.
+
+
+# TODO Keeping track of recent measurements : instantiate lane_lines.Line for both left and right lane lines to keep track of recent values from previously processed images.
+
 
 """ Find Real Lane Lines : Next Measurement """
 # TODO 7. search within a window around the previous detection, then perform TEST
