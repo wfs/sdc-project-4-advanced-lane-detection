@@ -3,6 +3,7 @@ import cv2
 import glob
 import pickle
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 #%matplotlib qt
 
 class Points:
@@ -22,7 +23,6 @@ class Points:
 
         :param store: image with corner points overlay
         :param display: image with corner points overlay, for visual testing.
-        :return: reference to object variables objpoints and imgpoints lists.
         """
         # prepare x,y,z object points of reference chessboard,
         # like [[ 0.  0.  0.] [ 1.  0.  0.] [ 2.  0.  0.] ... [ 8.  5.  0.]]
@@ -33,51 +33,51 @@ class Points:
         images = glob.glob('camera_cal/calibration*.jpg')
         # Step through the list and search for chessboard corners
         for idx, fname in enumerate(images):
-            img = cv2.imread(fname)
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            # img = cv2.imread(fname)
+            img = mpimg.imread(fname)
+            # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
             # Find the chessboard corners
             ret, corners = cv2.findChessboardCorners(gray, (9, 6), None)
 
             # If found, add object points, image points
-            if ret == True:
+            if ret:
                 self.objpoints.append(objp)
                 self.imgpoints.append(corners)
+                #self.draw_chess_board(corners, display, idx, img, ret, store)
 
-                # Draw and display the corners
-                cv2.drawChessboardCorners(img, (9, 6), corners, ret)
-                if store == True:
-                    write_name = 'corners_found'+str(idx)+'.jpg'
-                    cv2.imwrite(write_name, img)
-                if display == True:
-                    cv2.imshow('img', img)
-                    cv2.waitKey(500)
-            cv2.destroyAllWindows()
-
-        return self.objpoints, self.imgpoints
+        # return self.objpoints, self.imgpoints
 
 
-def calibrate(show_undistored_img=False):
+def draw_chess_board(self, corners, display, idx, img, ret, store):
+    # Draw and display the corners
+    cv2.drawChessboardCorners(img, (9, 6), corners, ret)
+    if store:
+        write_name = 'corners_found' + str(idx) + '.jpg'
+        cv2.imwrite(write_name, img)
+    if display:
+        cv2.imshow('img', img)
+        cv2.waitKey(500)
+        cv2.destroyAllWindows()
+
+
+def calibrate_and_undistort(img, show_undistored_img=False):
     # Generate point mapping
     points = Points()
     points.map_3d_object_to_2d_image_points(store=False, display=False)
 
     # Test undistortion on an image
-    img = cv2.imread('camera_cal/calibration1.jpg')
+    # img = cv2.imread('camera_cal/calibration1.jpg')
     img_size = (img.shape[1], img.shape[0])
 
     # Do camera calibration given object points and image points
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(points.objpoints, points.imgpoints, img_size, None, None)
 
-    dst = cv2.undistort(img, mtx, dist, None, mtx)
-    cv2.imwrite('camera_cal/undistorted_calibration1.jpg', dst)
+    destination_img = cv2.undistort(img, mtx, dist, None, mtx)
+    # cv2.imwrite('camera_cal/undistorted_calibration1.jpg', dst)
 
-    # Save the camera calibration result for later use (we won't worry about rvecs / tvecs)
-    dist_pickle = {}
-    dist_pickle["mtx"] = mtx
-    dist_pickle["dist"] = dist
-    pickle.dump(dist_pickle, open("camera_cal/camera_calibration_wide_pickle.p", "wb"))
-    # dst = cv2.cvtColor(dst, cv2.COLOR_BGR2RGB)
+    # save_calibration_result(dist, mtx)
 
     if show_undistored_img:
         # Visualize undistortion
@@ -86,6 +86,17 @@ def calibrate(show_undistored_img=False):
         # ax1.set_title('Original Image', fontsize=30)
         # ax2.imshow(dst)
         # ax2.set_title('Undistorted Image', fontsize=30)
-        cv2.imshow('dst', dst)
+        cv2.imshow('destination_img', destination_img)
         cv2.waitKey(1500)
         cv2.destroyAllWindows()
+
+    return destination_img
+
+
+def save_calibration_result(dist, mtx):
+    # Save the camera calibration result for later use (we won't worry about rvecs / tvecs)
+    dist_pickle = {}
+    dist_pickle["mtx"] = mtx
+    dist_pickle["dist"] = dist
+    pickle.dump(dist_pickle, open("camera_cal/camera_calibration_wide_pickle.p", "wb"))
+    # dst = cv2.cvtColor(dst, cv2.COLOR_BGR2RGB)
