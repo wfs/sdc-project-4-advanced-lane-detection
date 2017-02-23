@@ -29,7 +29,7 @@ def corners_unwarp(img, nx, ny, mtx, dist):
     # Write code to do the following steps
 
     # 1) Undistort using mtx and dist
-    # Use the OpenCV undistort_calibration_image() function to remove distortion
+    # Use the OpenCV undistort_image() function to remove distortion
     undist = cv2.undistort(img, mtx, dist, None, mtx)
 
     # 2) Convert to grayscale

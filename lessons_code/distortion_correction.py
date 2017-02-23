@@ -21,7 +21,7 @@ img = cv2.imread('test_image.png')
 # performs the camera calibration, image distortion correction and
 # returns the undistorted image
 def cal_undistort(img, objpoints, imgpoints):
-    # Use cv2.calibrateCamera and cv2.undistort_calibration_image()
+    # Use cv2.calibrateCamera and cv2.undistort_image()
     undist = np.copy(img)  # Delete this line
     return undist
 
