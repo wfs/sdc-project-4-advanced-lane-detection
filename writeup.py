@@ -65,18 +65,13 @@ def undistort_image(img, mtx, dist):
 
 
 # ------------------
-def compare_raw_distorted_against_undistorted_images(raw_1, undist_1, raw_2, undist_2, raw_col_title,
-                                                     undist_col_title,
-                                                     cmap):
+def compare_raw_distorted_against_undistorted_images(raw_1, undist_1, raw_2, undist_2):
     """
     Side-by-side visual comparison test.
     :param raw_1: distorted image
     :param raw_2: 2nd distorted image
     :param undist_1: undistorted image
     :param undist_2: 2nd undistorted image
-    :param raw_col_title: Distorted
-    :param undist_col_title: Undistorted
-    :param cmap: grayscale, else handle colour
     """
     fig = plt.figure()
     fig.set_figheight(6)
@@ -114,14 +109,14 @@ undistorted_calibration_img = undistort_image(calibration_img, c_matrix, dist_co
 cv2.imwrite('camera_cal/undist_calibration1.jpg', undistorted_calibration_img)
 
 # straight lane line images
-image_2 = cv2.imread('test_images/straight_lines2.jpg')
-undistorted_straight_lines_2 = undistort_image(image_2, c_matrix, dist_coeff)
+straight_lines_image_2 = cv2.imread('test_images/straight_lines2.jpg')
+undistorted_straight_lines_2 = undistort_image(straight_lines_image_2, c_matrix, dist_coeff)
 cv2.imwrite('output_images/undistorted_straight_lines2.jpg', undistorted_straight_lines_2)
 
 # View results
-compare_raw_distorted_against_undistorted_images(calibration_img, undistorted_calibration_img, image_2,
-                                                 undistorted_straight_lines_2, "Distorted",
-                                                 "Undistorted", 'gray')
+compare_raw_distorted_against_undistorted_images(calibration_img, undistorted_calibration_img,
+                                                 straight_lines_image_2,
+                                                 undistorted_straight_lines_2)
 
 # ------------------
 """ 3. Use color transforms, gradients, etc., to create a thresholded binary image. """
@@ -152,6 +147,24 @@ def sobel_gradient_direction(copy_of_colour_image, sobel_kernel=3):
     return abs_grad_dir
 
 
+def view_transformed_images(gradient_saturation_binary_image, combined_saturation_gradient_colour_binary_image):
+    fig = plt.figure()
+    fig.set_figheight(6)
+    fig.set_figwidth(15)
+
+    fig.add_subplot(2, 2, 1)
+    plt.title("Gradient Saturation Binary")
+    plt.imshow(gradient_saturation_binary_image)
+    fig.add_subplot(2, 2, 2)
+    plt.title("Gradient Saturation Colour Binary")
+    plt.imshow(combined_saturation_gradient_colour_binary_image, cmap='gray')
+
+    # IMPORTANT : uncomment when running from Jupyter Notebook
+    plt.show()
+
+    print("Binary side-by-side views done.")
+
+
 def colour_image_transformation_pipeline(colour_image, s_thresh=(180, 255), sobel_threshold_range=(40, 100),
                                          rgb_thresh=(200, 255)):
     copy_of_colour_image = np.copy(colour_image)
@@ -165,29 +178,32 @@ def colour_image_transformation_pipeline(colour_image, s_thresh=(180, 255), sobe
     # Threshold gradient
     sobel_binary = np.zeros_like(sobel_gradient_directions)
     sobel_binary[(sobel_gradient_directions >= sobel_threshold_range[0]) & (
-    sobel_gradient_directions <= sobel_threshold_range[1])] = 1
+        sobel_gradient_directions <= sobel_threshold_range[1])] = 1
 
     # Threshold RGB channel for range (200, 255) aka yellows
     yellow = copy_of_colour_image[:, :, 0]
     yellow_binary = np.zeros_like(yellow)
     yellow_binary[(yellow > rgb_thresh[0]) & (yellow <= rgb_thresh[1])] = 1
 
-    # Threshold color intensity
+    # Threshold colour intensity
     saturation_binary = np.zeros_like(saturation_channel)
     saturation_binary[(saturation_channel >= s_thresh[0]) & (saturation_channel <= s_thresh[1])] = 1
 
     # Stack dimensions
-    color_binary = np.dstack((np.zeros_like(sobel_binary), sobel_binary, saturation_binary))
-    combined_binary = np.zeros_like(sobel_binary)
-    combined_binary[(saturation_binary == 1) | (sobel_binary == 1) | (yellow_binary == 1)] = 1
+    grad_sat_bin_image = np.dstack((np.zeros_like(sobel_binary), sobel_binary, saturation_binary))
+    stacked_sat_grad_colour_bin_image = np.zeros_like(sobel_binary)
+    stacked_sat_grad_colour_bin_image[(saturation_binary == 1) | (sobel_binary == 1) | (yellow_binary == 1)] = 1
     print("colour_image_transformation_pipeline processing done")
-    return color_binary, combined_binary
+    return grad_sat_bin_image, stacked_sat_grad_colour_bin_image
 
 
-colour_bin, combined_bin = colour_image_transformation_pipeline(undistorted_straight_lines_2)
-plt.imsave('output_images/colour_straight_lines2.png', np.array(colour_bin))
-plt.imsave('output_images/binary_straight_lines2.png', np.array(combined_bin), cmap=cm.gray)
+grad_sat_bin_image, stacked_sat_grad_colour_bin_image = colour_image_transformation_pipeline(
+    undistorted_straight_lines_2)
+plt.imsave('output_images/colour_binary_straight_lines2.png', np.array(grad_sat_bin_image))
+plt.imsave('output_images/stacked_binary_straight_lines2.png', np.array(stacked_sat_grad_colour_bin_image),
+           cmap=cm.gray)
 
+view_transformed_images(grad_sat_bin_image, stacked_sat_grad_colour_bin_image)
 
 # ------------------
 

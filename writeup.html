@@ -11912,34 +11912,29 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">compare_raw_distorted_against_undistorted_images</span><span class="p">(</span><span class="n">raw_1</span><span class="p">,</span> <span class="n">undist_1</span><span class="p">,</span> <span class="n">raw_2</span><span class="p">,</span> <span class="n">undist_2</span><span class="p">,</span> <span class="n">raw_col_title</span><span class="p">,</span>
-                                                     <span class="n">undist_col_title</span><span class="p">,</span>
-                                                     <span class="n">cmap</span><span class="p">):</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">compare_raw_distorted_against_undistorted_images</span><span class="p">(</span><span class="n">raw_1</span><span class="p">,</span> <span class="n">undist_1</span><span class="p">,</span> <span class="n">raw_2</span><span class="p">,</span> <span class="n">undist_2</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Side-by-side visual comparison test.</span>
 <span class="sd">    :param raw_1: distorted image</span>
 <span class="sd">    :param raw_2: 2nd distorted image</span>
 <span class="sd">    :param undist_1: undistorted image</span>
 <span class="sd">    :param undist_2: 2nd undistorted image</span>
-<span class="sd">    :param raw_col_title: Distorted</span>
-<span class="sd">    :param undist_col_title: Undistorted</span>
-<span class="sd">    :param cmap: grayscale, else handle colour</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
     <span class="n">fig</span><span class="o">.</span><span class="n">set_figheight</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
     <span class="n">fig</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
 
-    <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Distorted Images&quot;</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">raw_1</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Undistorted Images&quot;</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">undist_1</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">raw_2</span><span class="p">)</span>
-    <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">undist_2</span><span class="p">)</span>
-    
+
     <span class="c1"># IMPORTANT : uncomment when running from Jupyter Notebook</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
@@ -12013,14 +12008,14 @@ Distortion coefficients calculated.
 <span class="n">cv2</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="s1">&#39;camera_cal/undist_calibration1.jpg&#39;</span><span class="p">,</span> <span class="n">undistorted_calibration_img</span><span class="p">)</span>
 
 <span class="c1"># straight lane line images</span>
-<span class="n">image_2</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">&#39;test_images/straight_lines2.jpg&#39;</span><span class="p">)</span>
-<span class="n">undistorted_straight_lines_2</span> <span class="o">=</span> <span class="n">undistort_image</span><span class="p">(</span><span class="n">image_2</span><span class="p">,</span> <span class="n">c_matrix</span><span class="p">,</span> <span class="n">dist_coeff</span><span class="p">)</span>
+<span class="n">straight_lines_image_2</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">&#39;test_images/straight_lines2.jpg&#39;</span><span class="p">)</span>
+<span class="n">undistorted_straight_lines_2</span> <span class="o">=</span> <span class="n">undistort_image</span><span class="p">(</span><span class="n">straight_lines_image_2</span><span class="p">,</span> <span class="n">c_matrix</span><span class="p">,</span> <span class="n">dist_coeff</span><span class="p">)</span>
 <span class="n">cv2</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="s1">&#39;output_images/undistorted_straight_lines2.jpg&#39;</span><span class="p">,</span> <span class="n">undistorted_straight_lines_2</span><span class="p">)</span>
 
 <span class="c1"># View results</span>
-<span class="n">compare_raw_distorted_against_undistorted_images</span><span class="p">(</span><span class="n">calibration_img</span><span class="p">,</span> <span class="n">undistorted_calibration_img</span><span class="p">,</span> <span class="n">image_2</span><span class="p">,</span>
-                                                 <span class="n">undistorted_straight_lines_2</span><span class="p">,</span> <span class="s2">&quot;Distorted&quot;</span><span class="p">,</span>
-                                                 <span class="s2">&quot;Undistorted&quot;</span><span class="p">,</span> <span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+<span class="n">compare_raw_distorted_against_undistorted_images</span><span class="p">(</span><span class="n">calibration_img</span><span class="p">,</span> <span class="n">undistorted_calibration_img</span><span class="p">,</span> 
+                                                 <span class="n">straight_lines_image_2</span><span class="p">,</span>
+                                                 <span class="n">undistorted_straight_lines_2</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -16628,27 +16623,6 @@ IiIiJaXJvoiIiIhISf0Gj+oiO/QdbxYAAAAASUVORK5CYII=
 <div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">extract_saturation_channel</span><span class="p">(</span><span class="n">colour_img</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Convert colour image into HLS channels and extract saturation channel.</span>
-<span class="sd">    :param colour_img: image to extract s channel ndarray from</span>
-<span class="sd">    :return: image saturation channel ndarray</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">hls</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">colour_img</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2HLS</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
-    <span class="n">s_channel</span> <span class="o">=</span> <span class="n">hls</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># aka 3rd channel</span>
-    <span class="k">return</span> <span class="n">s_channel</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
-<div class="inner_cell">
-    <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">sobel_gradient_direction</span><span class="p">(</span><span class="n">copy_of_colour_image</span><span class="p">,</span> <span class="n">sobel_kernel</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">     Define a function that applies Sobel x and y, then computes the direction (radians) of the gradient.</span>
@@ -16670,7 +16644,56 @@ IiIiJaXJvoiIiIhISf0Gj+oiO/QdbxYAAAAASUVORK5CYII=
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">extract_saturation_channel</span><span class="p">(</span><span class="n">colour_img</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert colour image into HLS channels and extract saturation channel.</span>
+<span class="sd">    :param colour_img: image to extract s channel ndarray from</span>
+<span class="sd">    :return: image saturation channel ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hls</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">colour_img</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2HLS</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+    <span class="n">s_channel</span> <span class="o">=</span> <span class="n">hls</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># aka 3rd channel</span>
+    <span class="k">return</span> <span class="n">s_channel</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 <div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">view_transformed_images</span><span class="p">(</span><span class="n">gradient_saturation_binary_image</span><span class="p">,</span> <span class="n">combined_saturation_gradient_colour_binary_image</span><span class="p">):</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">set_figheight</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Gradient Saturation Binary&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">gradient_saturation_binary_image</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Gradient Saturation Colour Binary&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">combined_saturation_gradient_colour_binary_image</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+
+    <span class="c1"># IMPORTANT : uncomment when running from Jupyter Notebook</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Binary side-by-side views done.&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">colour_image_transformation_pipeline</span><span class="p">(</span><span class="n">colour_image</span><span class="p">,</span> <span class="n">s_thresh</span><span class="o">=</span><span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="n">sobel_threshold_range</span><span class="o">=</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
@@ -16693,16 +16716,16 @@ IiIiJaXJvoiIiIhISf0Gj+oiO/QdbxYAAAAASUVORK5CYII=
     <span class="n">yellow_binary</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">yellow</span><span class="p">)</span>
     <span class="n">yellow_binary</span><span class="p">[(</span><span class="n">yellow</span> <span class="o">&gt;</span> <span class="n">rgb_thresh</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">yellow</span> <span class="o">&lt;=</span> <span class="n">rgb_thresh</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span> <span class="o">=</span> <span class="mi">1</span>
 
-    <span class="c1"># Threshold color intensity</span>
+    <span class="c1"># Threshold colour intensity</span>
     <span class="n">saturation_binary</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">saturation_channel</span><span class="p">)</span>
     <span class="n">saturation_binary</span><span class="p">[(</span><span class="n">saturation_channel</span> <span class="o">&gt;=</span> <span class="n">s_thresh</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">saturation_channel</span> <span class="o">&lt;=</span> <span class="n">s_thresh</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span> <span class="o">=</span> <span class="mi">1</span>
 
     <span class="c1"># Stack dimensions</span>
-    <span class="n">color_binary</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">sobel_binary</span><span class="p">),</span> <span class="n">sobel_binary</span><span class="p">,</span> <span class="n">saturation_binary</span><span class="p">))</span>
-    <span class="n">combined_binary</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">sobel_binary</span><span class="p">)</span>
-    <span class="n">combined_binary</span><span class="p">[(</span><span class="n">saturation_binary</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">sobel_binary</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">yellow_binary</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">grad_sat_bin_image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">sobel_binary</span><span class="p">),</span> <span class="n">sobel_binary</span><span class="p">,</span> <span class="n">saturation_binary</span><span class="p">))</span>
+    <span class="n">stacked_sat_grad_colour_bin_image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">sobel_binary</span><span class="p">)</span>
+    <span class="n">stacked_sat_grad_colour_bin_image</span><span class="p">[(</span><span class="n">saturation_binary</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">sobel_binary</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">yellow_binary</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;colour_image_transformation_pipeline processing done&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">color_binary</span><span class="p">,</span> <span class="n">combined_binary</span>
+    <span class="k">return</span> <span class="n">grad_sat_bin_image</span><span class="p">,</span> <span class="n">stacked_sat_grad_colour_bin_image</span>
 </pre></div>
 
 </div>
@@ -16712,12 +16735,16 @@ IiIiJaXJvoiIiIhISf0Gj+oiO/QdbxYAAAAASUVORK5CYII=
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">colour_bin</span><span class="p">,</span> <span class="n">combined_bin</span> <span class="o">=</span> <span class="n">colour_image_transformation_pipeline</span><span class="p">(</span><span class="n">undistorted_straight_lines_2</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">imsave</span><span class="p">(</span><span class="s1">&#39;output_images/colour_straight_lines2.png&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">colour_bin</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">imsave</span><span class="p">(</span><span class="s1">&#39;output_images/binary_straight_lines2.png&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">combined_bin</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">gray</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">grad_sat_bin_image</span><span class="p">,</span> <span class="n">stacked_sat_grad_colour_bin_image</span> <span class="o">=</span> <span class="n">colour_image_transformation_pipeline</span><span class="p">(</span>
+    <span class="n">undistorted_straight_lines_2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imsave</span><span class="p">(</span><span class="s1">&#39;output_images/colour_binary_straight_lines2.png&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">grad_sat_bin_image</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imsave</span><span class="p">(</span><span class="s1">&#39;output_images/stacked_binary_straight_lines2.png&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">stacked_sat_grad_colour_bin_image</span><span class="p">),</span>
+           <span class="n">cmap</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">gray</span><span class="p">)</span>
+
+<span class="n">view_transformed_images</span><span class="p">(</span><span class="n">grad_sat_bin_image</span><span class="p">,</span> <span class="n">stacked_sat_grad_colour_bin_image</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -16737,19 +16764,223 @@ IiIiJaXJvoiIiIhISf0Gj+oiO/QdbxYAAAAASUVORK5CYII=
 </div>
 </div>
 
+<div class="output_area">
+<div class="prompt"></div>
+
+
+
+<div class="output_png output_subarea ">
+<img src="data:image/png;base64,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
+ecsAAAAASUVORK5CYII=
+"
+>
+</div>
+
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Binary side-by-side views done.
+</pre>
 </div>
 </div>
 
 </div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
 </div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p><img src="output_images/binary_straight_lines2.png" alt="&quot;combined_binary_image_straight_lines2&quot;"></p>
 
-</div>
-</div>
 </div>
 <div class="cell border-box-sizing text_cell rendered">
 <div class="prompt input_prompt">
