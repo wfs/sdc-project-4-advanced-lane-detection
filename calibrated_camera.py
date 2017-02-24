@@ -75,7 +75,7 @@ def calibrate_and_undistort(img, show_undistored_img=False):
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(points.objpoints, points.imgpoints, img_size, None, None)
 
     destination_img = cv2.undistort(img, mtx, dist, None, mtx)
-    # cv2.imwrite('camera_cal/undistorted_calibration1.jpg', dst)
+    # cv2.imwrite('camera_cal/undistorted_calibration1.jpg', destination_transformation)
 
     # save_calibration_result(dist, mtx)
 
@@ -84,7 +84,7 @@ def calibrate_and_undistort(img, show_undistored_img=False):
         # f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
         # ax1.imshow(img)
         # ax1.set_title('Original Image', fontsize=30)
-        # ax2.imshow(dst)
+        # ax2.imshow(destination_transformation)
         # ax2.set_title('Undistorted Image', fontsize=30)
         cv2.imshow('destination_img', destination_img)
         cv2.waitKey(1500)
@@ -99,4 +99,4 @@ def save_calibration_result(dist, mtx):
     dist_pickle["mtx"] = mtx
     dist_pickle["dist"] = dist
     pickle.dump(dist_pickle, open("camera_cal/camera_calibration_wide_pickle.p", "wb"))
-    # dst = cv2.cvtColor(dst, cv2.COLOR_BGR2RGB)
+    # destination_transformation = cv2.cvtColor(destination_transformation, cv2.COLOR_BGR2RGB)

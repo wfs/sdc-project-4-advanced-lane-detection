@@ -49,12 +49,12 @@ def corners_unwarp(img, nx, ny, mtx, dist):
             # Choose offset from image corners to plot detected corners
             # This should be chosen to present the result at the proper aspect ratio
             # My choice of 100 pixels is not exact, but close enough for our purpose here
-            offset = 100  # offset for dst points
+            offset = 100  # offset for destination_transformation points
 
             #  Grab the image shape
             img_size = (gray.shape[1], gray.shape[0])
 
-            # b) define 4 source points src = np.float32([[,],[,],[,],[,]])
+            # b) define 4 source points source_transformation = np.float32([[,],[,],[,],[,]])
                  #Note: you could pick any four of the detected corners
                  # as long as those four corners define a rectangle
                  #One especially smart way to do this would be to use four well-chosen
@@ -64,7 +64,7 @@ def corners_unwarp(img, nx, ny, mtx, dist):
             #  For source points I'm grabbing the outer four detected corners
             src = np.float32([corners[0], corners[nx - 1], corners[-1], corners[-nx]])
 
-            # c) define 4 destination points dst = np.float32([[,],[,],[,],[,]])
+            # c) define 4 destination points destination_transformation = np.float32([[,],[,],[,],[,]])
             # For destination points, I'm arbitrarily choosing some points to be
             # a nice fit for displaying our warped result
             # again, not exact, but close enough for our purposes
@@ -73,7 +73,7 @@ def corners_unwarp(img, nx, ny, mtx, dist):
                               [offset, img_size[1] - offset]])
 
             # d) use cv2.getPerspectiveTransform() to get M, the transform matrix
-            # Given src and dst points, calculate the perspective transform matrix
+            # Given source_transformation and destination_transformation points, calculate the perspective transform matrix
             M = cv2.getPerspectiveTransform(src, dst)
 
             # e) use cv2.warpPerspective() to warp your image to a top-down view
