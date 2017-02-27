@@ -493,13 +493,13 @@ def setup_sliding_window(left_x_pt, right_x_pt, sliding_window, top_down_bin_war
 
 
 # ------------------
-def extract_and_fit_sliding_window_lines(left_line, right_line, sliding_window):
+def extract_and_fit_sliding_window_lines(left_line_obj, right_line_obj, sliding_window):
     """
-
-    :param left_line: update object attribute with non_zero pixel locations
-    :param right_line: update object attribute with non_zero pixel locations
+    Calculates best fit lines for left and right SlidingWindows
+    :param left_line_obj: update object attribute with non_zero pixel locations
+    :param right_line_obj: update object attribute with non_zero pixel locations
     :param sliding_window: current SlidingWindow object to operate on
-    :return: best fit lines for left and right SlidingWindows
+    :return: left_fit, right_fit
     """
     # Concatenate the arrays of indices
     left_lane_inds = np.concatenate(sliding_window.left_lane_pixel_index)
@@ -509,10 +509,10 @@ def extract_and_fit_sliding_window_lines(left_line, right_line, sliding_window):
     left_y = sliding_window.non_zero_y_warp_elements[left_lane_inds]
     right_x = sliding_window.non_zero_x_warp_elements[right_lane_inds]
     right_y = sliding_window.non_zero_y_warp_elements[right_lane_inds]
-    left_line.all_x = left_x  # values for detected line pixels
-    left_line.all_y = left_y  # values for detected line pixels
-    right_line.all_x = right_x  # values for detected line pixels
-    right_line.all_y = right_y  # values for detected line pixels
+    left_line_obj.all_x = left_x  # values for detected line pixels
+    left_line_obj.all_y = left_y  # values for detected line pixels
+    right_line_obj.all_x = right_x  # values for detected line pixels
+    right_line_obj.all_y = right_y  # values for detected line pixels
     # Fit a second order polynomial
     left_fit = np.polyfit(left_y, left_x,
                           2)  # Least squared-error best fit of polynomial of degree 2 to points in left_y, left_x
@@ -522,35 +522,34 @@ def extract_and_fit_sliding_window_lines(left_line, right_line, sliding_window):
 
 
 # ------------------
-def track_lane_line_recent_and_best_fits(left_fit, left_line, right_fit, right_line, top_down_bin_warp):
+def track_lane_line_recent_and_best_fits(left_fit, left_line_obj, right_fit, right_line_obj, y_vals):
     """
     Update history of recently fitted lines for SlidingWindows.
     :param left_fit: best fit line for SlidingWindow
-    :param left_line: current line object
+    :param left_line_obj: current line object
     :param right_fit: best fit line for SlidingWindow
-    :param right_line: current line object
-    :param top_down_bin_warp: perspective to operate on, Shape == (720, 1280)
-    :return: y_values ; 720 evenly spaced numbers from 0 to 719.
+    :param right_line_obj: current line object
+    :param y_vals: 720 evenly spaced numbers from 0 to 719.
     """
-    left_line.current_fit = left_fit
-    right_line.current_fit = right_fit
-    y_values = np.linspace(0, top_down_bin_warp.shape[0] - 1, top_down_bin_warp.shape[0])
+    left_line_obj.current_fit = left_fit
+    right_line_obj.current_fit = right_fit
 
-    # Create a 2nd order polynomial using left_fit coefficients ...
+    # Create a degree 2 polynomial (aka quadratic) using left_fit coefficients ...
     #     x[0] = p[0]        * y[0]     ** n + p[1]        * y[0]     + p[2]
-    left_fit_x = left_fit[0] * y_values ** 2 + left_fit[1] * y_values + left_fit[2]
+    left_fit_x = left_fit[0] * y_vals ** 2 + left_fit[1] * y_vals + left_fit[2]
     # print("left_fit_x :", left_fit_x)
-    right_fit_x = right_fit[0] * y_values ** 2 + right_fit[1] * y_values + right_fit[2]
+
+    # Create a degree 2 polynomial (aka quadratic) using right_fit coefficients ...
+    #      x[0] = p[0]         * y[0]   ** n + p[1]         * y[0]   + p[2]
+    right_fit_x = right_fit[0] * y_vals ** 2 + right_fit[1] * y_vals + right_fit[2]
     # print("right_fit_x :", right_fit_x)
 
-    left_line.recent_x_fitted.append(left_fit_x)
-    right_line.recent_x_fitted.append(right_fit_x)
+    left_line_obj.recent_x_fitted.append(left_fit_x)
+    right_line_obj.recent_x_fitted.append(right_fit_x)
 
-    left_line.best_x = left_fit_x
-    right_line.best_x = right_fit_x
-    # print("y_values :", y_values)
+    left_line_obj.best_x = left_fit_x
+    right_line_obj.best_x = right_fit_x
     print("track_lane_line_recent_and_best_fits done.")
-    return y_values
 
 
 # ------------------
@@ -588,17 +587,17 @@ def draw_and_identify_good_sliding_windows(out_img, sliding_window, top_down_bin
 
 
 # ------------------
-def fit_sliding_windows_lines_to_lanes(top_down_bin_warp, left_line, right_line):
+def fit_sliding_windows_lines_to_lanes(top_down_bin_warp, left_line_obj, right_line_obj):
     """
     Create fitted lines to left and right lane lines using SlidingWindow technique.
     :param top_down_bin_warp: perspective to operate on, Shape == (720, 1280)
-    :param left_line: newly instantiated object
-    :param right_line: newly instantiated object
-    :return: offset_from_center, updated left_line, updated right_line, best fit y_values
+    :param left_line_obj: newly instantiated object
+    :param right_line_obj: newly instantiated object
+    :return: offset_from_center, updated left_line_obj, updated right_line_obj, best fit y_values
     """
     # Create white, empty image 3D array to later overwrite with shaded projection
     out_img = np.dstack((top_down_bin_warp, top_down_bin_warp,
-                         top_down_bin_warp)) * 255  # fit_sliding_windows_lines_to_lanes(top_down_binary_warp, left_line, right_line)
+                         top_down_bin_warp)) * 255
     # print("out_img.shape :", out_img.shape)  # (720, 1280, 3)
 
     # Locate the lane x points and calculate the mid-point.
@@ -628,22 +627,24 @@ def fit_sliding_windows_lines_to_lanes(top_down_bin_warp, left_line, right_line)
             sliding_window.right_x_current = np.int(
                 np.mean(sliding_window.non_zero_x_warp_elements[good_right_index]))
 
-    left_fit, right_fit = extract_and_fit_sliding_window_lines(left_line, right_line, sliding_window)
+    left_fit, right_fit = extract_and_fit_sliding_window_lines(left_line_obj, right_line_obj, sliding_window)
 
-    y_values = track_lane_line_recent_and_best_fits(left_fit, left_line, right_fit, right_line,
-                                                    top_down_bin_warp)
-    return offset_from_center, left_line, right_line, y_values
+    y_values = np.linspace(0, top_down_bin_warp.shape[0] - 1, top_down_bin_warp.shape[0])
+    track_lane_line_recent_and_best_fits(left_fit, left_line_obj, right_fit, right_line_obj, y_values)
+    return offset_from_center, left_line_obj, right_line_obj, y_values
 
 
 # ------------------
-def best_fit_left_and_right_x_polynomials(y_values):
-    # Create a 2nd order polynomial using left_fit coefficients ...
-    #     x[0] = p[0]                     * y[0]     ** n + p[1]                     * y[0]     + p[2]
-    left_fit_x = left_line.current_fit[0] * y_values ** 2 + left_line.current_fit[1] * y_values + \
-                 left_line.current_fit[2]
-    # print("right_line.current_fit.shape :", right_line.current_fit.shape)  # (3,)
-    right_fit_x = right_line.current_fit[0] * y_values ** 2 + right_line.current_fit[1] * y_values + \
-                  right_line.current_fit[2]
+def create_current_fit_degree_2_polynomials(y_values, left_line_obj, right_line_obj):
+    # Create a degree 2 polynomial (aka quadratic) using left_fit coefficients ...
+    #     x[0] = p[0]                         * y[0]     ** n + p[1]                         * y[0]     + p[2]
+    left_fit_x = left_line_obj.current_fit[0] * y_values ** 2 + left_line_obj.current_fit[1] * y_values + \
+                 left_line_obj.current_fit[2]
+
+    # Create a degree 2 polynomial (aka quadratic) using right_fit coefficients ...
+    #      x[0] = p[0]                          * y[0]     ** n + p[1]                          * y[0]     + p[2]
+    right_fit_x = right_line_obj.current_fit[0] * y_values ** 2 + right_line_obj.current_fit[1] * y_values + \
+                  right_line_obj.current_fit[2]
     return y_values, left_fit_x, right_fit_x
 
 
@@ -680,14 +681,13 @@ transform_matrix_inverse, top_down_binary_warp = warp_perspective_to_top_down(so
                                                                               destination_transformation)
 
 # Calculate left, right line attributes and distance from lane centre.
-# 'y_axis' is output from track_lane_line_recent_and_best_fits()
 offset_from_center, left_line, right_line, y_axis = fit_sliding_windows_lines_to_lanes(top_down_binary_warp,
                                                                                        left_line, right_line)
 
 # Create y-axis numbers aka 720 evenly spaced numbers from 0 to 719.
 # Note : top_down_warped_binary_stacked.shape : (720, 1280)
 y_axis = np.linspace(0, top_down_binary_warp.shape[0] - 1, top_down_binary_warp.shape[0])
-best_fit_left_and_right_x_polynomials(y_axis)
+create_current_fit_degree_2_polynomials(y_axis, left_line, right_line)
 
 # out_img will have red coloured left SlidingWindows, blue coloured right SlidingWindows
 out_img = np.dstack((top_down_binary_warp, top_down_binary_warp, top_down_binary_warp)) * 255
@@ -706,6 +706,8 @@ plt.xlim(0, 1280)
 plt.ylim(720, 0)
 plt.imshow(out_img)
 
+# ------------------
+# 6.2 ... vehicle position with respect to centre.
 
 # ------------------
 def check_lane_lines_are_parallel(left_line_fit_x, right_line_fit_x):
@@ -742,7 +744,7 @@ def check_we_have_not_lost_sight_of_lines(left_line_to_check, right_line_to_chec
     """
     If have lost sight of lines, re-fit sliding windows.
     :param left_line_to_check: left line object
-    :param right_line_object: right line object
+    :param right_line_to_check: right line object
     :param top_down_bin_warp: perspective to operate on, Shape == (720, 1280)
     :return: existing, else updated lines
     """
@@ -769,36 +771,33 @@ def find_initial_non_zero_element_indices(top_down_bin_warp):
 # ------------------
 def find_left_lane_pixels_positions_within_margin(left_fit, margin, nonzero_x, nonzero_y):
     """
-    Extend search for pixels around margins.
-    :param left_fit: polynomial coefficients for the most recent fit
-    :param margin: number of pixels to extend search boundary
-    :param nonzero_x: all non-zero pixel locations in the x dimension across the warped image
-    :param nonzero_y: all non-zero pixel locations in the y axis across the warped image
-    :return:
+    Select all left pixel positions within a margin range.
+    Create a degree 2 polynomial (aka quadratic) from left_fit, nonzero_y and margin terms.
     """
+    #          x[0] = (      p[0] *      (y[0] ** n) + p[1]        * y[0]      + p[2])       - margin
     left_lane_index = (
-        (nonzero_x > (left_fit[0] * (nonzero_y ** 2) + left_fit[1] * nonzero_y + left_fit[2] - margin)) & (
-            nonzero_x < (left_fit[0] * (nonzero_y ** 2) + left_fit[1] * nonzero_y + left_fit[2] + margin)))
+        (nonzero_x > (left_fit[0] * (nonzero_y ** 2) + left_fit[1] * nonzero_y + left_fit[2] - margin)) &
+        (nonzero_x < (left_fit[0] * (nonzero_y ** 2) + left_fit[1] * nonzero_y + left_fit[2] + margin))
+    )
     return left_lane_index
 
 
 # ------------------
 def find_right_lane_pixels_positions_within_margins(margin, nonzero_x, nonzero_y, right_fit):
+    """
+    Select all right pixel positions within a margin range.
+    Create a degree 2 polynomial (aka quadratic) from right_fit, nonzero_y and margin terms.
+    """
+    #           x[0] = (      p[0] *      (y[0] ** n) + p[1]         * y[0]      + p[2])        - margin
     right_lane_index = (
-        (nonzero_x > (right_fit[0] * (nonzero_y ** 2) + right_fit[1] * nonzero_y + right_fit[2] - margin)) & (
-            nonzero_x < (right_fit[0] * (nonzero_y ** 2) + right_fit[1] * nonzero_y + right_fit[2] + margin)))
+        (nonzero_x > (right_fit[0] * (nonzero_y ** 2) + right_fit[1] * nonzero_y + right_fit[2] - margin)) &
+        (nonzero_x < (right_fit[0] * (nonzero_y ** 2) + right_fit[1] * nonzero_y + right_fit[2] + margin))
+    )
     return right_lane_index
 
 
 # ------------------
 def extract_left_non_zero_pixel_positions(left_lane_index, nonzero_x, nonzero_y):
-    """
-
-    :param left_lane_index:
-    :param nonzero_x:
-    :param nonzero_y:
-    :return:
-    """
     left_x = nonzero_x[left_lane_index]
     left_y = nonzero_y[left_lane_index]
     return left_x, left_y
@@ -812,7 +811,10 @@ def extract_right_non_zero_pixel_positions(nonzero_x, nonzero_y, right_lane_inde
 
 
 # ------------------
-def best_fit_to_detected_lines(left_fit, left_x, left_y, right_fit, right_x, right_y):
+def best_fit_to_detected_lines(left_x, left_y, right_x, right_y):
+    """
+    Create a degree 2 polynomial (aka quadratic) that best fits by minimising the squared error
+    """
     left_fit = np.polyfit(left_y, left_x, 2)
     right_fit = np.polyfit(right_y, right_x, 2)
     return left_fit, right_fit
@@ -863,7 +865,7 @@ def search_for_and_update_lines(top_down_bin_warp, left_line_obj, right_line_obj
     left_x, left_y = extract_left_non_zero_pixel_positions(left_lane_index, nonzero_x, nonzero_y)
     right_x, right_y = extract_right_non_zero_pixel_positions(nonzero_x, nonzero_y, right_lane_index)
 
-    left_fit, right_fit = best_fit_to_detected_lines(left_fit, left_x, left_y, right_fit, right_x, right_y)
+    left_fit, right_fit = best_fit_to_detected_lines(left_x, left_y, right_x, right_y)
 
     left_fit_x_to_plot, right_fit_x_to_plot, y_values = generate_plotting_values(left_fit, right_fit,
                                                                                  top_down_bin_warp)
@@ -906,17 +908,18 @@ def search_for_and_update_lines(top_down_bin_warp, left_line_obj, right_line_obj
 
 # ------------------
 # Quick check that nothing is broken ...
-# offset_from_center, left_line, right_line, y_axis = search_for_and_update_lines(top_down_binary_warp, left_line,
-#                                                                                 right_line, 20)
+offset_from_center, left_line, right_line, y_axis = search_for_and_update_lines(top_down_binary_warp, left_line,
+                                                                                right_line, 20)
 
 # ------------------
 # TODO REFACTOR FROM HERE DOWN !
-def find_curv_pix(y_values, left_line, right_line):
+def find_curv_pix(y_values, left_line_obj, right_line_obj):
     # Define y-value where we want radius of curvature
     # I'll choose the maximum y-value, corresponding to the bottom of the image
-    left_fit = left_line.current_fit
-    right_fit = right_line.current_fit
+    left_fit = left_line_obj.current_fit
+    right_fit = right_line_obj.current_fit
     y_eval = np.max(y_values)
+    #               R = ((1 + (                  dy/dx               ) ^  2) ^  3/2) / |d^2y/dx^2|
     left_curve_radius = ((1 + (2 * left_fit[0] * y_eval + left_fit[1]) ** 2) ** 1.5) / np.absolute(
         2 * left_fit[0])
     right_curve_radius = ((1 + (2 * right_fit[0] * y_eval + right_fit[1]) ** 2) ** 1.5) / np.absolute(
@@ -929,12 +932,12 @@ find_curv_pix(y_axis, left_line, right_line)  # e.g. 1730.24402261 1349.2995529
 
 
 # ------------------
-def find_curv_real(left_line, right_line, y_values):
+def find_curv_real(left_line_obj, right_line_obj, y_values):
     # Define conversions in x and y from pixels space to meters
-    left_line_x = left_line.all_x
-    left_line_y = left_line.all_y
-    right_x = right_line.all_x
-    right_y = right_line.all_y
+    left_line_x = left_line_obj.all_x
+    left_line_y = left_line_obj.all_y
+    right_x = right_line_obj.all_x
+    right_y = right_line_obj.all_y
     ym_per_pix = 30 / 720  # meters per pixel in y dimension
     xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
     y_eval = np.max(y_values)
@@ -1047,13 +1050,12 @@ cv2.imwrite('output_images/laned_image.jpg', laned_image)
 plt.imshow(laned_image)
 
 # ------------------
-
 img = cv2.imread('test_images/straight_lines1.jpg')
 prev_warp = None
 left_line = Line()
 right_line = Line()
 
-
+# ------------------
 def Pipeline(img, mtx, dist, left_line, right_line):
     undistorted = undistort_image(img, mtx, dist)
     matrix_trans_inv, top_down_warp_bin_poly = colour_image_transformation_pipeline(undistorted)
@@ -1069,9 +1071,9 @@ def Pipeline(img, mtx, dist, left_line, right_line):
     return laned_image
 
 
+# ------------------
 # Pipeline(img, c_matrix, dist_coeff, left_fit, right_fit)
 Pipeline(img, c_matrix, dist_coeff, left_line.current_fit, right_line.current_fit)
-
 
 # ------------------
 # TODO : THIS COULD MEAN I NEED TO CREATE NEW FUNCTION SIGNATURE TO RETURN A TUPLE OF NDARRAYS.
@@ -1084,8 +1086,6 @@ def process_image(img):
 # Import everything needed to edit/save/watch video clips
 from moviepy.editor import VideoFileClip
 from IPython.display import HTML
-
-# ------------------
 
 white_output = 'processed.mp4'
 clip1 = VideoFileClip("CarND-Advanced-Lane-Lines-master/project_video.mp4")
