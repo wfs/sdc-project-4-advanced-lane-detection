@@ -13,25 +13,29 @@
 # 8. Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 #
 # ---
-""" Imports """
+
+# =====
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 # uncomment next line when running code in jupyter notebook
-% matplotlib
-inline
+# %matplotlib inline
 import glob
 import matplotlib.cm as cm
 
+# =====
+### 1. Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
 
-# ------------------
+
+# =====
 class Points:
     """ Static class """
-    objpoints = []
-    imgpoints = []
+    objpoints = []  # will store 3D grid reference coordinates
+    imgpoints = []  # will store 2D corners coordinates found in the calibration image
 
 
-# ------------------
+# =====
 def find_corner_coordinates_and_map_to_reference_chessboard():
     """
     Create 9 col x 6 row grid reference coordinates aka 3D objpoints.
@@ -47,10 +51,10 @@ def find_corner_coordinates_and_map_to_reference_chessboard():
         if ret:
             Points.imgpoints.append(corners)
             Points.objpoints.append(objp)
-    print("Calibration grid setup done.")
+            # print("Calibration grid setup done.")
 
 
-# ------------------
+# =====
 def calculate_camera_distortion_coefficients(img, objpts, imgpts):
     """
     aka calibrate camera
@@ -62,11 +66,23 @@ def calculate_camera_distortion_coefficients(img, objpts, imgpts):
     img_size = (img.shape[1], img.shape[0])
     return_value, camera_matrix, distortion_coefficients, rotation_vectors, \
     translation_vectors = cv2.calibrateCamera(objpts, imgpts, img_size, None, None)
-    print("Distortion coefficients calculated.")
+    # print("Distortion coefficients calculated.")
     return camera_matrix, distortion_coefficients
 
 
-# ------------------
+# =====
+
+find_corner_coordinates_and_map_to_reference_chessboard()
+
+calibration_img = cv2.imread("camera_cal/calibration1.jpg")
+c_matrix, dist_coeff = calculate_camera_distortion_coefficients(calibration_img, Points.objpoints,
+                                                                Points.imgpoints)
+
+
+# =====
+### 2. Apply a distortion correction to raw images.
+
+# =====
 def undistort_image(img, mtx, dist):
     """
     Undistort the image.
@@ -76,11 +92,11 @@ def undistort_image(img, mtx, dist):
     :return: undistorted image
     """
     undist = cv2.undistort(img, mtx, dist, None, mtx)
-    print("Image undistorted.")
+    # print("Image undistorted.")
     return undist
 
 
-# ------------------
+# =====
 def compare_raw_distorted_against_undistorted_images(raw_1, undist_1, raw_2, undist_2):
     """
     Side-by-side visual comparison test.
@@ -105,39 +121,34 @@ def compare_raw_distorted_against_undistorted_images(raw_1, undist_1, raw_2, und
     plt.imshow(undist_2)
 
     # IMPORTANT : uncomment when running from Jupyter Notebook
-    plt.show()
+    # plt.show()
 
     print("Side-by-side views done.")
 
 
-# ------------------
-""" 1. Compute the camera calibration matrix and distortion coefficients given a set of chessboard images. """
-find_corner_coordinates_and_map_to_reference_chessboard()
-
-calibration_img = cv2.imread("camera_cal/calibration1.jpg")
-c_matrix, dist_coeff = calculate_camera_distortion_coefficients(calibration_img, Points.objpoints,
-                                                                Points.imgpoints)
-
-# ------------------
-""" 2. Apply a distortion correction to raw images. """
+# =====
 # calibration images
 undistorted_calibration_img = undistort_image(calibration_img, c_matrix, dist_coeff)
 cv2.imwrite('camera_cal/undist_calibration1.jpg', undistorted_calibration_img)
 
 # straight lane line images
-straight_lines_image_2 = cv2.imread('test_images/straight_lines2.jpg')
-undistorted_straight_lines_2 = undistort_image(straight_lines_image_2, c_matrix, dist_coeff)
-cv2.imwrite('output_images/undistorted_straight_lines2.jpg', undistorted_straight_lines_2)
+straight_lines_image = cv2.imread('test_images/straight_lines1.jpg')
+# straight_lines_image = cv2.imread('test_images/straight_lines2.jpg')
+undistorted_straight_lines = undistort_image(straight_lines_image, c_matrix, dist_coeff)
+cv2.imwrite('output_images/undistorted_straight_lines1.jpg',
+            undistorted_straight_lines)
+# cv2.imwrite('output_images/undistorted_straight_lines2.jpg', undistorted_straight_lines)
 
 # View results
 compare_raw_distorted_against_undistorted_images(calibration_img, undistorted_calibration_img,
-                                                 straight_lines_image_2,
-                                                 undistorted_straight_lines_2)
-
-# ------------------
-""" 3. Use color transforms, gradients, etc., to create a thresholded binary image. """
+                                                 straight_lines_image,
+                                                 undistorted_straight_lines)
 
 
+# =====
+### 3. Use color transforms, gradients, etc., to create a thresholded binary image.
+
+# =====
 def sobel_gradient_direction(copy_of_colour_image, sobel_kernel=3):
     """
      Define a function that applies Sobel x and y, then computes the direction (radians) of the gradient.
@@ -158,6 +169,7 @@ def sobel_gradient_direction(copy_of_colour_image, sobel_kernel=3):
     return abs_grad_dir
 
 
+# =====
 def extract_saturation_channel(colour_img):
     """
     Convert colour image into HLS channels and extract saturation channel.
@@ -170,12 +182,11 @@ def extract_saturation_channel(colour_img):
     return s_channel
 
 
-def view_transformed_images(gradient_saturation_binary_image, combined_saturation_gradient_colour_binary_image):
+# =====
+def view_transformed_images(result_array):
     """
     View the images output from the transformation pipeline.
-    :param gradient_saturation_binary_image: Directional, S channel, binary thresholded image.
-    :param combined_saturation_gradient_colour_binary_image: S channel, Directional, Yellows, binary
-        thresholded image.
+    :param result_array : Directional, S channel, Yellows, binary thresholded images.
     """
     fig = plt.figure()
     fig.set_figheight(6)
@@ -183,18 +194,21 @@ def view_transformed_images(gradient_saturation_binary_image, combined_saturatio
 
     fig.add_subplot(2, 2, 1)
     plt.title("Gradient Saturation Binary")
-    plt.imshow(gradient_saturation_binary_image)
+    # gradient_saturation_binary_image
+    plt.imshow(result_array[0])
     fig.add_subplot(2, 2, 2)
     plt.title("Gradient Saturation Colour Binary")
-    plt.imshow(combined_saturation_gradient_colour_binary_image, cmap='gray')
+    # combined_saturation_gradient_colour_binary_image
+    plt.imshow(result_array[1], cmap='gray')
 
     # IMPORTANT : uncomment when running from Jupyter Notebook
-    plt.show()
+    # plt.show()
 
     print("Binary side-by-side views done.")
 
 
-def colour_image_transformation_pipeline(colour_image, sat_thresh=(150, 255), sobel_threshold_range=(40, 100),
+# =====
+def colour_image_transformation_pipeline(colour_image, sat_thresh=(180, 255), sobel_threshold_range=(40, 100),
                                          rgb_thresh=(200, 255)):
     """
     Image information extraction pipeline.
@@ -228,29 +242,33 @@ def colour_image_transformation_pipeline(colour_image, sat_thresh=(150, 255), so
 
     # Stack dimensions
     grad_sat_bin_img = np.dstack((np.zeros_like(sobel_binary), sobel_binary, saturation_binary))
+    # print("grad_sat_bin_img.shape :", grad_sat_bin_img.shape)
     stacked_s_g_c_bin_img = np.zeros_like(sobel_binary)
     stacked_s_g_c_bin_img[(saturation_binary == 1) | (sobel_binary == 1) | (yellow_binary == 1)] = 1
-    print("colour_image_transformation_pipeline processing done")
+    # print("stacked_s_g_c_bin_img.shape :", stacked_s_g_c_bin_img.shape)
+    # print("colour_image_transformation_pipeline processing done")
     return grad_sat_bin_img, stacked_s_g_c_bin_img
 
 
-# ------------------
+# =====
 # Extract information from image
-grad_sat_bin_image, stacked_sat_grad_colour_bin_image = colour_image_transformation_pipeline(
-    undistorted_straight_lines_2)
+result = colour_image_transformation_pipeline(undistorted_straight_lines)
 
 # Save outputs
-plt.imsave('output_images/colour_binary_straight_lines2.png', np.array(grad_sat_bin_image))
-plt.imsave('output_images/stacked_binary_straight_lines2.png', np.array(stacked_sat_grad_colour_bin_image),
+plt.imsave('output_images/colour_binary_straight_lines1.png',
+           np.array(result[0]))
+plt.imsave('output_images/stacked_binary_straight_lines1.png',
+           np.array(result[1]),
            cmap=cm.gray)
 
 # View outputs
-view_transformed_images(grad_sat_bin_image, stacked_sat_grad_colour_bin_image)
-
-# ------------------
-""" 4. Apply a perspective transform to rectify binary image ("birds-eye view"). """
+view_transformed_images(result)
 
 
+# =====
+### 4. Apply a perspective transform to rectify binary image ("birds-eye view").
+
+# =====
 def view_polygon_and_warped_images(polygon_overlay_image, warped_polygon_overlay_image):
     """
     View the undistored image with polygon lane line and warped image from overhead viewpoint with
@@ -270,11 +288,12 @@ def view_polygon_and_warped_images(polygon_overlay_image, warped_polygon_overlay
     plt.imshow(warped_polygon_overlay_image)
 
     # IMPORTANT : uncomment when running from Jupyter Notebook
-    plt.show()
+    # plt.show()
 
-    print("Polygon and warped side-by-side views done.")
+    # print("Polygon and warped side-by-side views done.")
 
 
+# =====
 def define_source_polygon():
     """
     Define 4 corners of polygon region of undistorted image.
@@ -288,6 +307,7 @@ def define_source_polygon():
     # print("source_transformation polygon defined :", source_transformation)
 
 
+# =====
 def define_destination_polygon():
     """
     Define 4 corners of polygon region to warp transform onto.
@@ -301,9 +321,10 @@ def define_destination_polygon():
     # print("destination_transformation polygon defined :", destination_transformation)
 
 
+# =====
 def warp_perspective_to_top_down(src, img, dst):
     """
-    Calculate the inversed transformation matrix and
+    Calculate the inversed transformation matrix and warped top down transform image
     :param src: source points where warp transforms from
     :param img: stacked binary thresholded image that includes saturation, gradient direction, colour intensity
     :param dst: destination points where warp transforms to
@@ -313,27 +334,30 @@ def warp_perspective_to_top_down(src, img, dst):
     transformation_matrix_inverse = cv2.getPerspectiveTransform(dst, src)  # the transform matrix inverse
     warped_to_top_down = cv2.warpPerspective(img, transformation_matrix,
                                              img_size)  # warp image to a top-down view
-    print("Perspective warp done.")
+    # print("Perspective warp done.")
     return transformation_matrix_inverse, warped_to_top_down
 
 
+# =====
 def polygon():
     """
     Create green polygon and overlay on undistorted image.
     """
     global polygon_undistored_image
-    polygon_undistored_image = cv2.line(undistorted_straight_lines_2, (240, 700), (610, 440), [0, 255, 0], 3)
-    polygon_undistored_image = cv2.line(undistorted_straight_lines_2, (240, 700), (1080, 700), [0, 255, 0], 3)
-    polygon_undistored_image = cv2.line(undistorted_straight_lines_2, (1080, 700), (670, 440), [0, 255, 0], 3)
-    polygon_undistored_image = cv2.line(undistorted_straight_lines_2, (610, 440), (670, 440), [0, 255, 0], 3)
+    polygon_undistored_image = cv2.line(undistorted_straight_lines, (240, 700), (610, 440), [0, 255, 0], 3)
+    polygon_undistored_image = cv2.line(undistorted_straight_lines, (240, 700), (1080, 700), [0, 255, 0], 3)
+    polygon_undistored_image = cv2.line(undistorted_straight_lines, (1080, 700), (670, 440), [0, 255, 0], 3)
+    polygon_undistored_image = cv2.line(undistorted_straight_lines, (610, 440), (670, 440), [0, 255, 0], 3)
     # print("Green polygon defined : ", polygon_undistored_image)
 
 
-# ------------------
-""" 5. Detect lane pixels and fit to find the lane boundary. """
+# =====
+### 5. Detect lane pixels and fit to find the lane boundary.
+
+# =====
 # Get image 2D size
-print("undistorted_straight_lines_2.shape : ", undistorted_straight_lines_2.shape)
-img_size = (undistorted_straight_lines_2.shape[1], undistorted_straight_lines_2.shape[0])
+# print("undistorted_straight_lines.shape : ", undistorted_straight_lines.shape)
+img_size = (undistorted_straight_lines.shape[1], undistorted_straight_lines.shape[0])
 
 # Set 4 corners of warp source polygon
 define_source_polygon()
@@ -349,10 +373,12 @@ matrix_transform_inversed, top_down_warped_binary_polygon = warp_perspective_to_
                                                                                          polygon_undistored_image,
                                                                                          destination_transformation)
 
+print("top_down_warped_binary_polygon.shape :", top_down_warped_binary_polygon.shape)
 matrix_transform_inversed_stacked, top_down_warped_binary_stacked = warp_perspective_to_top_down(
     source_transformation,
-    stacked_sat_grad_colour_bin_image,
+    result[1],
     destination_transformation)
+print("top_down_warped_binary_stacked.shape :", top_down_warped_binary_stacked.shape)
 
 # Store output
 cv2.imwrite('output_images/lined_image_straight_lines2.jpg', polygon_undistored_image)
@@ -361,30 +387,24 @@ cv2.imwrite('output_images/warped_straight_lines2.jpg', top_down_warped_binary_p
 # View output
 view_polygon_and_warped_images(polygon_undistored_image, top_down_warped_binary_polygon)
 
-# ------------------
+# =====
 histogram = np.sum(top_down_warped_binary_stacked[top_down_warped_binary_stacked.shape[0] // 2:, :], axis=0)
-print("top_down_warped_binary_stacked.shape : ", top_down_warped_binary_stacked.shape)
 plt.plot(histogram)
 
-# ------------------
-"""
-6. Determine the curvature of the lane and vehicle position with respect to center.
-"""
 
+# =====
+### 6.1 Determine the curvature of the lane and ...
 
-class Line:
+# =====
+# Define a class to receive the characteristics of each line detection
+class Line():
     def __init__(self):
-        """
-        A class to receive the characteristics of each line detection
-
-        A Udacity provided class definition.
-        """
         # was the line detected in the last iteration?
         self.detected = False
         # x values of the last n fits of the line
-        self.recent_x_fitted = []
+        self.recent_xfitted = []
         # average x values of the fitted line over the last n iterations
-        self.best_x = None
+        self.bestx = None
         # polynomial coefficients averaged over the last n iterations
         self.best_fit = None
         # polynomial coefficients for the most recent fit
@@ -396,32 +416,13 @@ class Line:
         # difference in fit coefficients between last and new fits
         self.diffs = np.array([0, 0, 0], dtype='float')
         # x values for detected line pixels
-        self.all_x = None
+        self.allx = None
         # y values for detected line pixels
-        self.all_y = None
-        # unable to detect left / right lanes
-        self.lost_sight_of_lanes_count = None
+        self.ally = None
+        self.failed_sanity_check_count = None
 
 
-# ------------------
-def get_left_mid_right_pts_from_warp_histogram(top_down_bin_warp):
-    """
-    Located the peaks in the histogram and calculate the mid-lane point.
-    :param top_down_bin_warp: image with polygon overlay of lanes
-    :return: left_x_point, midpoint, right_x_point
-    """
-    histogram = np.sum(top_down_bin_warp[top_down_bin_warp.shape[0] // 2:, :], axis=0)  # 360
-    # print("histogram :", histogram)
-    midpoint = np.int(histogram.shape[0] / 2)  # 180
-    print("midpoint :", midpoint)
-    left_x_point = np.argmax(histogram[:midpoint])
-    print("left_x_point :", left_x_point)
-    right_x_point = np.argmax(histogram[midpoint:]) + midpoint
-    print("right_x_point :", right_x_point)
-    return left_x_point, midpoint, right_x_point
-
-
-# ------------------
+# =====
 def get_offset_from_center(right_x, left_x, midpoint):
     """
     Using the warp histogram x points, calculate the camera's (aka car's) position, relative to lane centre.
@@ -437,222 +438,274 @@ def get_offset_from_center(right_x, left_x, midpoint):
     return (3.7 / 700) * abs(((right_x - left_x) / 2) + left_x - midpoint)  # 3.7 m / 700 px == metres per pixel
 
 
-# ------------------
-class SlidingWindow:
-    """ Sliding windows that track the lane curvature. """
-
-    def __init__(self):
-        self.left_x_pt = 0
-        self.right_x_pt = 0
-        self.top_down_bin_warp = []
-        self.number_of_windows = 0
-        self.window_height = 0
-        self.non_zero_warp_elements = []
-        self.non_zero_y_warp_elements = []
-        self.non_zero_x_warp_elements = []
-        self.left_x_current = 0
-        self.right_x_current = 0
-        self.window_width_margin = 0
-        self.recentre_window_min_pixels = 0
-        self.left_lane_pixel_index = []
-        self.right_lane_pixel_index = []
-        # print("SlidingWindow object created.")
-
-    def calc_window_height(self, top_down_bin_warp_polygon):
-        """
-        Split y size into proportional number of windows.
-        :param top_down_bin_warp_polygon: perspective to operate on
-        """
-        self.window_height = np.int(top_down_bin_warp_polygon.shape[0] / self.number_of_windows)
-        # print("SlidingWindow.calc_window_height set to :", self.window_height)
-
-    def locate_nonzero_pixels_by_axis(self, top_down_bin_warp_polygon):
-        self.non_zero_warp_elements = top_down_bin_warp_polygon.nonzero()
-        self.non_zero_y_warp_elements = np.array(self.non_zero_warp_elements[0])
-        self.non_zero_x_warp_elements = np.array(self.non_zero_warp_elements[1])
-        # print("SlidingWindow.locate_nonzero_pixels_by_axis() done.")
-
-
-# ------------------
-def setup_sliding_window(left_x_pt, right_x_pt, sliding_window, top_down_bin_warp):
+# =====
+def find_key_lane_points_along_x(binary_warped):
     """
-    Set key SlidingWindow attributes, some calculated, some defined.
-    :param left_x_pt: current position of SlidingWindow updated for each new window instance
-    :param right_x_pt: current position of SlidingWindow updated for each new window instance
-    :param sliding_window: object to update attributes of
-    :param top_down_bin_warp: perspective to operate on
+    Use max points from histogram spikes, calculate left, mid and right x points.
+    :param binary_warped: top-down perspective of lane lines to operate on
+    :return: left, mid and right x points
     """
-    sliding_window.number_of_windows = 9
-    sliding_window.calc_window_height(top_down_bin_warp)
-    sliding_window.locate_nonzero_pixels_by_axis(top_down_binary_warp)
-    sliding_window.left_x_current = left_x_pt
-    sliding_window.right_x_current = right_x_pt
-    sliding_window.window_width_margin = 50
-    sliding_window.recentre_window_min_pixels = 30
-    # print("SlidingWindow object key attributes now set.")
+    histogram = np.sum(binary_warped[binary_warped.shape[0] // 2:, :], axis=0)
+    # print("histogram.shape : ", histogram.shape)  # (1280,)
+    midpoint = np.int(histogram.shape[0] / 2)
+    # print("midpoint :", midpoint)  # 640
+    left_x_base = np.argmax(histogram[:midpoint])  # get max point between left and middle
+    # print("left_x_base :", left_x_base)  # e.g. 290 and 312
+    right_x_base = np.argmax(histogram[midpoint:]) + midpoint  # get max point between middle and right
+    # print("right_x_base :", right_x_base)  # e.g. 983 and 963
+    return left_x_base, midpoint, right_x_base
 
 
-# ------------------
-def extract_and_fit_sliding_window_lines(left_line_obj, right_line_obj, sliding_window):
+# =====
+def find_active_x_y_pixels(binary_warped_img):
     """
-    Calculates best fit lines for left and right SlidingWindows
-    :param left_line_obj: update object attribute with non_zero pixel locations
-    :param right_line_obj: update object attribute with non_zero pixel locations
-    :param sliding_window: current SlidingWindow object to operate on
-    :return: left_fit, right_fit
+    Capture positions of active pixels along y and x axes from top-down perspective image
+    :param binary_warped_img: top-down perspective of lane lines to operate on
+    :return: active pixels along y and x axes
     """
-    # Concatenate the arrays of indices
-    left_lane_inds = np.concatenate(sliding_window.left_lane_pixel_index)
-    right_lane_inds = np.concatenate(sliding_window.right_lane_pixel_index)
-    # Extract left and right line pixel positions
-    left_x = sliding_window.non_zero_x_warp_elements[left_lane_inds]
-    left_y = sliding_window.non_zero_y_warp_elements[left_lane_inds]
-    right_x = sliding_window.non_zero_x_warp_elements[right_lane_inds]
-    right_y = sliding_window.non_zero_y_warp_elements[right_lane_inds]
-    left_line_obj.all_x = left_x  # values for detected line pixels
-    left_line_obj.all_y = left_y  # values for detected line pixels
-    right_line_obj.all_x = right_x  # values for detected line pixels
-    right_line_obj.all_y = right_y  # values for detected line pixels
-    # Fit a second order polynomial
-    left_fit = np.polyfit(left_y, left_x,
-                          2)  # Least squared-error best fit of polynomial of degree 2 to points in left_y, left_x
-    right_fit = np.polyfit(right_y, right_x, 2)
-    print("extract_and_fit_sliding_window_lines done.")
-    return left_fit, right_fit
+    nonzero = binary_warped_img.nonzero()
+    nonzero_y = np.array(nonzero[0])  # y axis pixels
+    nonzero_x = np.array(nonzero[1])  # x axis pixels
+    return nonzero_x, nonzero_y
 
 
-# ------------------
-def track_lane_line_recent_and_best_fits(left_fit, left_line_obj, right_fit, right_line_obj, y_vals):
+# =====
+def find_left_and_right_sliding_windows_boundaries(binary_warped, left_x_current, right_x_current, window,
+                                                   window_height, window_width_margin):
     """
-    Update history of recently fitted lines for SlidingWindows.
-    :param left_fit: best fit line for SlidingWindow
-    :param left_line_obj: current line object
-    :param right_fit: best fit line for SlidingWindow
-    :param right_line_obj: current line object
-    :param y_vals: 720 evenly spaced numbers from 0 to 719.
+    Find left and right sliding windows boundaries
+    :param binary_warped: top-down perspective of lane lines to operate on
+    :param left_x_current: left x spike
+    :param right_x_current: right x spike
+    :param window: index in window iteration range
+    :param window_height: sliding window heigh
+    :param window_width_margin: margin to adjust +/- sliding window's width
+    :return: boundary values
     """
-    left_line_obj.current_fit = left_fit
-    right_line_obj.current_fit = right_fit
-
-    # Create a degree 2 polynomial (aka quadratic) using left_fit coefficients ...
-    #     x[0] = p[0]        * y[0]     ** n + p[1]        * y[0]     + p[2]
-    left_fit_x = left_fit[0] * y_vals ** 2 + left_fit[1] * y_vals + left_fit[2]
-    # print("left_fit_x :", left_fit_x)
-
-    # Create a degree 2 polynomial (aka quadratic) using right_fit coefficients ...
-    #      x[0] = p[0]         * y[0]   ** n + p[1]         * y[0]   + p[2]
-    right_fit_x = right_fit[0] * y_vals ** 2 + right_fit[1] * y_vals + right_fit[2]
-    # print("right_fit_x :", right_fit_x)
-
-    left_line_obj.recent_x_fitted.append(left_fit_x)
-    right_line_obj.recent_x_fitted.append(right_fit_x)
-
-    left_line_obj.best_x = left_fit_x
-    right_line_obj.best_x = right_fit_x
-    print("track_lane_line_recent_and_best_fits done.")
+    window_y_low_boundary = binary_warped.shape[0] - (window + 1) * window_height
+    window_y_high_boundary = binary_warped.shape[0] - window * window_height
+    window_x_left_side_low_boundary = left_x_current - window_width_margin
+    window_x_left_side_high_boundary = left_x_current + window_width_margin
+    window_x_right_side_low_boundary = right_x_current - window_width_margin
+    window_x_right_side_high_boundary = right_x_current + window_width_margin
+    return window_x_left_side_high_boundary, window_x_left_side_low_boundary, window_x_right_side_high_boundary, window_x_right_side_low_boundary, window_y_high_boundary, window_y_low_boundary
 
 
-# ------------------
-def draw_and_identify_good_sliding_windows(out_img, sliding_window, top_down_bin_warp, window):
+# =====
+def find_active_x_y_pxs_in_window(active_pxs_x, active_pxs_y, window_x_left_side_high_boundary,
+                                  window_x_left_side_low_boundary, window_x_right_side_high_boundary,
+                                  window_x_right_side_low_boundary, window_y_high_boundary,
+                                  window_y_low_boundary):
     """
-    Draw thin ('2') SlidingWindow rectangle, identify non-zero pixels within left & right SlidingWindow.
-    :param out_img: output image that will have shaded polygon projected onto
-    :param sliding_window: current SlidingWindow object to operate on
-    :param top_down_bin_warp: perspective to operate on, Shape == (720, 1280)
-    :param window: window item from for loop iteration over range of 9 total SlidingWindows
+    Find active x y pixels in sliding window
+    :param active_pxs_x: non-zero pixels in x axis
+    :param active_pxs_y: non-zero pixels in y axis
+    :param window_x_left_side_high_boundary: a sliding window x position
+    :param window_x_left_side_low_boundary: a sliding window x position
+    :param window_x_right_side_high_boundary: a sliding window x position
+    :param window_x_right_side_low_boundary: a sliding window x position
+    :param window_y_high_boundary: a sliding window y position
+    :param window_y_low_boundary: a sliding window y position
+    :return:
     """
-    # Identify window boundaries in y for both right and left windows on x
-    win_y_low = top_down_bin_warp.shape[0] - (window + 1) * sliding_window.window_height
-    win_y_high = top_down_bin_warp.shape[0] - window * sliding_window.window_height
-    win_x_left_low = sliding_window.left_x_current - sliding_window.window_width_margin
-    win_x_left_high = sliding_window.left_x_current + sliding_window.window_width_margin
-    win_x_right_low = sliding_window.right_x_current - sliding_window.window_width_margin
-    win_x_right_high = sliding_window.right_x_current + sliding_window.window_width_margin
-    # Draw the windows on the visualization image
-    cv2.rectangle(out_img, (win_x_left_low, win_y_low), (win_x_left_high, win_y_high), (0, 255, 0), 2)
-    cv2.rectangle(out_img, (win_x_right_low, win_y_low), (win_x_right_high, win_y_high), (0, 255, 0), 2)
-    # Identify the nonzero pixels in x and y within the window
-    good_left_index = ((sliding_window.non_zero_y_warp_elements >= win_y_low) & (
-        sliding_window.non_zero_y_warp_elements < win_y_high) & (
-                           sliding_window.non_zero_x_warp_elements >= win_x_left_low) & (
-                           sliding_window.non_zero_x_warp_elements < win_x_left_high)).nonzero()[0]
-    good_right_index = ((sliding_window.non_zero_y_warp_elements >= win_y_low) & (
-        sliding_window.non_zero_y_warp_elements < win_y_high) & (
-                            sliding_window.non_zero_x_warp_elements >= win_x_right_low) & (
-                            sliding_window.non_zero_x_warp_elements < win_x_right_high)).nonzero()[0]
-    # print("good_left_index :", good_left_index)
-    # print("good_right_index :", good_right_index)
-    print("draw_and_identify_good_sliding_windows done.")
-    return good_left_index, good_right_index
+    active_left_pxs_indices = \
+        ((active_pxs_y >= window_y_low_boundary) & (active_pxs_y < window_y_high_boundary) & (
+            active_pxs_x >= window_x_left_side_low_boundary) & (
+             active_pxs_x < window_x_left_side_high_boundary)).nonzero()[0]
+    active_right_pxs_indices = \
+        ((active_pxs_y >= window_y_low_boundary) & (active_pxs_y < window_y_high_boundary) & (
+            active_pxs_x >= window_x_right_side_low_boundary) & (
+             active_pxs_x < window_x_right_side_high_boundary)).nonzero()[0]
+    return active_left_pxs_indices, active_right_pxs_indices
 
 
-# ------------------
-def fit_sliding_windows_lines_to_lanes(top_down_bin_warp, left_line_obj, right_line_obj):
+# =====
+def recentre_next_sliding_window_back_to_the_mean(active_left_pxs_indices, active_pxs_x,
+                                                  active_right_pxs_indices, left_x_spike_current,
+                                                  min_pxs_to_recentre_window, right_x_spike_current):
     """
-    Create fitted lines to left and right lane lines using SlidingWindow technique.
-    :param top_down_bin_warp: perspective to operate on, Shape == (720, 1280)
-    :param left_line_obj: newly instantiated object
-    :param right_line_obj: newly instantiated object
-    :return: offset_from_center, updated left_line_obj, updated right_line_obj, best fit y_values
+    Check if line is curving outside of min pixels threshold, then recentre next sliding window in loop.
+    :param active_left_pxs_indices: left line
+    :param active_pxs_x: all active pixes, left and right
+    :param active_right_pxs_indices: right line
+    :param left_x_spike_current: max left x position
+    :param min_pxs_to_recentre_window: threshold trigger value
+    :param right_x_spike_current: max right x position
+    :return: new left and right x positions
     """
-    # Create white, empty image 3D array to later overwrite with shaded projection
-    out_img = np.dstack((top_down_bin_warp, top_down_bin_warp,
-                         top_down_bin_warp)) * 255
+    if len(active_left_pxs_indices) > min_pxs_to_recentre_window:
+        left_x_spike_current = np.int(np.mean(active_pxs_x[active_left_pxs_indices]))
+    if len(active_right_pxs_indices) > min_pxs_to_recentre_window:
+        right_x_spike_current = np.int(np.mean(active_pxs_x[active_right_pxs_indices]))
+
+    return left_x_spike_current, right_x_spike_current
+
+
+# =====
+def group_active_x_y_pixels(active_pxs_x, active_pxs_y, left_lane_pxs_indices,
+                            right_lane_pxs_indices):
+    """
+    Group left and right line pixel positions
+    :param active_pxs_x: all active pixels in x direction
+    :param active_pxs_y: all active pixels in y direction
+    :param left_lane_pxs_indices: all active left line pixels
+    :param right_lane_pxs_indices: all active right line pixels
+    :return: grouped active pixels in x, y directions for left, right lines
+    """
+    left_x = active_pxs_x[left_lane_pxs_indices]
+    left_y = active_pxs_y[left_lane_pxs_indices]
+    right_x = active_pxs_x[right_lane_pxs_indices]
+    right_y = active_pxs_y[right_lane_pxs_indices]
+    return left_x, left_y, right_x, right_y
+
+
+# =====
+def calc_deg_2_polynomial_with_left_right_fit_x_coefficients(binary_warped, left_fit,
+                                                             right_fit):
+    """
+    e.g. p(x) = p[0]        * x      **deg+ p[1]        * x      + p[deg]
+    left_fitx = left_fit[0] * y_axis ** 2 + left_fit[1] * y_axis + left_fit[2]
+
+    :param binary_warped: top-down perspective of lane lines to operate on
+    :param left_fit: vector of left fit coefficients ('p' above) that minimises the squared error
+    :param right_fit: vector of right fit coefficients ('p' above) that minimises the squared error
+    :return: best fit left and right lines
+    """
+    y_axis = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])  # (0 ... 719)
+    #    p(x) = p[0]        * x     **deg+ x           * deg   + p[deg]
+    left_fit_x = left_fit[0] * y_axis ** 2 + left_fit[1] * y_axis + left_fit[2]
+    right_fit_x = right_fit[0] * y_axis ** 2 + right_fit[1] * y_axis + right_fit[2]
+    return left_fit_x, y_axis, right_fit_x
+
+
+# =====
+# def get_offset_from_center(rightx_base, leftx_base, midpoint):
+#     return (3.7/700)*abs(((rightx_base-leftx_base)/2)+leftx_base - midpoint)
+
+# =====
+# Find the peak of the left and right halves of the histogram
+# These will be the starting point for the left and right lines
+
+
+def setup_lines(binary_warped, left_line, right_line):
+    """
+    Apply iterative sliding window technique to setup lines
+    :param binary_warped: top-down perspective of lane lines to operate on
+    :param left_line: Line object to modify
+    :param right_line: Line object to modify
+    :return: modified lines, vehicle offset from lane centre, y_axis number series 0 - 719
+    """
+    # print("binary_warped.shape : ", binary_warped.shape)  # (720, 1280)
+    # print("binary_warped : ", binary_warped)  # [[0 0 0 ..., 0 0 0] ... [0 0 0 ..., 0 0 0]]
+
+    # Create the output image template
+    out_img = np.dstack((binary_warped, binary_warped, binary_warped)) * 255
     # print("out_img.shape :", out_img.shape)  # (720, 1280, 3)
+    # print("out_img : ", out_img)  # [ [[0 0 0] [0 0 0] [0 0 0] ..., 0 0 0] [0 0 0] [0 0 0]] ... ]
 
-    # Locate the lane x points and calculate the mid-point.
-    left_x_pt, mid_pt, right_x_pt = get_left_mid_right_pts_from_warp_histogram(top_down_bin_warp)
+    # Find spiked and calculate key x points from histogram
+    left_x_spike_base, midpoint, right_x_spike_base = find_key_lane_points_along_x(binary_warped)
+    offset_from_center = get_offset_from_center(right_x_spike_base, left_x_spike_base, midpoint)
+    # print("offset_from_center :", offset_from_center)  # 0.0185 and 0.0132142857143
 
-    # Calculate car offset from lane centre.
-    offset_from_center = get_offset_from_center(right_x_pt, left_x_pt, mid_pt)
-    print("offset_from_center :", offset_from_center)
+    # Set the number of sliding windows
+    total_sliding_windows = 9
 
-    # Instantiate and initialise SlidingWindow
-    sliding_window = SlidingWindow()
-    setup_sliding_window(left_x_pt, right_x_pt, sliding_window, top_down_bin_warp)
+    # Set the height of sliding windows as a proportion total image height
+    window_height = np.int(binary_warped.shape[0] / total_sliding_windows)
 
-    # Step through the windows one by one
-    for window in range(sliding_window.number_of_windows):
-        good_left_index, good_right_index = draw_and_identify_good_sliding_windows(out_img, sliding_window,
-                                                                                   top_down_bin_warp, window)
+    # Capture positions of active pixels
+    active_pxs_x, active_pxs_y = find_active_x_y_pixels(binary_warped)
 
-        # Append these indices to the lists
-        sliding_window.left_lane_pixel_index.append(good_left_index)
-        sliding_window.right_lane_pixel_index.append(good_right_index)
+    # Set current left, right positions. This will be updated for each window
+    left_x_spike_current = left_x_spike_base
+    right_x_spike_current = right_x_spike_base
 
-        if len(good_left_index) > sliding_window.recentre_window_min_pixels:
-            sliding_window.left_x_current = np.int(
-                np.mean(sliding_window.non_zero_x_warp_elements[good_left_index]))
-        if len(good_right_index) > sliding_window.recentre_window_min_pixels:
-            sliding_window.right_x_current = np.int(
-                np.mean(sliding_window.non_zero_x_warp_elements[good_right_index]))
+    # Set the width of the windows +/- margin
+    window_width_margin = 50
 
-    left_fit, right_fit = extract_and_fit_sliding_window_lines(left_line_obj, right_line_obj, sliding_window)
+    # Set threshold number of pixels before triggering sliding window recenter
+    min_pxs_to_recentre_window = 30
 
-    y_values = np.linspace(0, top_down_bin_warp.shape[0] - 1, top_down_bin_warp.shape[0])
-    track_lane_line_recent_and_best_fits(left_fit, left_line_obj, right_fit, right_line_obj, y_values)
-    return offset_from_center, left_line_obj, right_line_obj, y_values
+    # Create empty lists to receive left and right lane pixel indices
+    left_lane_pxs_indices = []
+    right_lane_pxs_indices = []
+
+    # Loop through and process each sliding window
+    for window in range(total_sliding_windows):
+        # Find all window boundaries
+        window_x_left_side_high_boundary, window_x_left_side_low_boundary, window_x_right_side_high_boundary, window_x_right_side_low_boundary, window_y_high_boundary, window_y_low_boundary = find_left_and_right_sliding_windows_boundaries(
+            binary_warped, left_x_spike_current, right_x_spike_current, window, window_height,
+            window_width_margin)
+
+        # Draw the sliding windows onto the output image
+        cv2.rectangle(out_img, (window_x_left_side_low_boundary, window_y_low_boundary),
+                      (window_x_left_side_high_boundary, window_y_high_boundary), (0, 255, 0), 2)
+        cv2.rectangle(out_img, (window_x_right_side_low_boundary, window_y_low_boundary),
+                      (window_x_right_side_high_boundary, window_y_high_boundary), (0, 255, 0), 2)
+
+        # Find active pixels for x, y within this sliding window
+        active_left_pxs_indices, active_right_pxs_indices = find_active_x_y_pxs_in_window(active_pxs_x,
+                                                                                          active_pxs_y,
+                                                                                          window_x_left_side_high_boundary,
+                                                                                          window_x_left_side_low_boundary,
+                                                                                          window_x_right_side_high_boundary,
+                                                                                          window_x_right_side_low_boundary,
+                                                                                          window_y_high_boundary,
+                                                                                          window_y_low_boundary)
+
+        # Append line indices to lists
+        left_lane_pxs_indices.append(active_left_pxs_indices)
+        right_lane_pxs_indices.append(active_right_pxs_indices)
+
+        # Recentre next window to the mean position
+        left_x_spike_current, right_x_spike_current = recentre_next_sliding_window_back_to_the_mean(
+            active_left_pxs_indices, active_pxs_x, active_right_pxs_indices, left_x_spike_current,
+            min_pxs_to_recentre_window, right_x_spike_current)
+
+    # Concatenate the arrays of indices
+    left_lane_pxs_indices = np.concatenate(left_lane_pxs_indices)
+    right_lane_pxs_indices = np.concatenate(right_lane_pxs_indices)
+
+    # Group left and right line pixel positions
+    left_x_active_pxs, left_y_active_pxs, right_x_active_pxs, right_y_active_pxs = group_active_x_y_pixels(
+        active_pxs_x,
+        active_pxs_y,
+        left_lane_pxs_indices,
+        right_lane_pxs_indices)
+
+    # Update Line objects attributes
+    left_line.allx = left_x_active_pxs
+    left_line.ally = left_y_active_pxs
+    right_line.allx = right_x_active_pxs
+    right_line.ally = right_y_active_pxs
+
+    # Fit a degree 2 polynomial through the left and right active pixels
+    left_fit = np.polyfit(left_y_active_pxs, left_x_active_pxs, 2)
+    right_fit = np.polyfit(right_y_active_pxs, right_x_active_pxs, 2)
+
+    # Update Line objects attributes
+    left_line.current_fit = left_fit
+    right_line.current_fit = right_fit
+
+    # Best fit the left and right lines
+    best_left_fit_x, y_axis_values, best_right_fit_x = calc_deg_2_polynomial_with_left_right_fit_x_coefficients(
+        binary_warped,
+        left_fit,
+        right_fit)
+
+    left_line.recent_xfitted.append(best_left_fit_x)
+    right_line.recent_xfitted.append(best_right_fit_x)
+    left_line.bestx = best_left_fit_x
+    right_line.bestx = best_right_fit_x
+    return offset_from_center, left_line, right_line, y_axis_values
 
 
-# ------------------
-def create_current_fit_degree_2_polynomials(y_values, left_line_obj, right_line_obj):
-    # Create a degree 2 polynomial (aka quadratic) using left_fit coefficients ...
-    #     x[0] = p[0]                         * y[0]     ** n + p[1]                         * y[0]     + p[2]
-    left_fit_x = left_line_obj.current_fit[0] * y_values ** 2 + left_line_obj.current_fit[1] * y_values + \
-                 left_line_obj.current_fit[2]
-
-    # Create a degree 2 polynomial (aka quadratic) using right_fit coefficients ...
-    #      x[0] = p[0]                          * y[0]     ** n + p[1]                          * y[0]     + p[2]
-    right_fit_x = right_line_obj.current_fit[0] * y_values ** 2 + right_line_obj.current_fit[1] * y_values + \
-                  right_line_obj.current_fit[2]
-    return y_values, left_fit_x, right_fit_x
-
-
-# ------------------
-def draw_fitted_line(points):
+# =====
+def draw_polynomial_line(points):
     """
-    Iteratively generate the fitted line from the supplied points.
-    :param points: [left | right] line points
+    Use the recently fitted line points with cv2.line() to iteratively draw a yellow degree-2 polynomial line
+    :param points: recent, best fit line points
     """
     previous = points[0]
     for point in points:
@@ -661,55 +714,87 @@ def draw_fitted_line(points):
         previous = point
 
 
-# ------------------
-# Create Line objects : left and right
+# =====
+def highlight_detected_line_pixels(binary_warped_img, left_line_obj, right_line_obj):
+    """
+    Highlight active pixels on an image, left in green, right in blue
+    :param binary_warped_img: top-down perspective of lane lines to operate on
+    :param left_line_obj: Line object to modify
+    :param right_line_obj: Line object to modify
+    :return: the highlighted image
+    """
+    output_image = np.dstack((binary_warped_img, binary_warped_img, binary_warped_img)) * 255
+    output_image[left_line_obj.ally, left_line_obj.allx] = [0, 255, 0]  # Green
+    output_image[right_line_obj.ally, right_line_obj.allx] = [0, 0, 255]  # Blue
+    return output_image
+
+
+# =====
+def create_x_y_line_coordinates(left_line_obj, right_line_obj, y_axis):
+    """
+    Column stack the fitted x line points and the y_axis values for plotting on a warped image
+    :param left_line_obj: get x fitted values to stack alongside y_axis values
+    :param right_line_obj: get x fitted values to stack alongside y_axis values
+    :param y_axis: values used for plotting
+    :return: plotting coordinates
+    """
+    left_coordinates = np.array(np.column_stack((left_line_obj.recent_xfitted[0], y_axis)))
+    right_coordinates = np.array(np.column_stack((right_line_obj.recent_xfitted[0], y_axis)))
+    # print("right_coordinates.shape :", right_coordinates.shape)
+    # print("right_coordinates :", right_coordinates)
+    return left_coordinates, right_coordinates
+
+
+# =====
+# Visual test of sliding window technique
+
+# Instantiate new Line objects to modify
 left_line = Line()
 right_line = Line()
 
-# Load test image
-img = cv2.imread('test_images/test5.jpg')
+# Select an image for testing and display
+img = cv2.imread('test_images/test6.jpg')
 
-# Undistort the test image, using the calibration matrix and distortion coefficients for this camera lens.
+# Undistort the test image and apply transformations
 undistorted = undistort_image(img, c_matrix, dist_coeff)
+thresholded = colour_image_transformation_pipeline(undistorted)
 
-# Generate the gradient binary and stacked saturation, colour, gradient binary.
-gradient_binary, stacked_binary = colour_image_transformation_pipeline(undistorted)
+# Warp processed test image to new perspective
+matrix_transform_inversed_stacked, binary_warped_test = warp_perspective_to_top_down(source_transformation,
+                                                                                     thresholded[1],
+                                                                                     destination_transformation)
 
-# Warp perspective to top down view point.
-transform_matrix_inverse, top_down_binary_warp = warp_perspective_to_top_down(source_transformation,
-                                                                              stacked_binary,
-                                                                              destination_transformation)
+# Modify Line objects by applying sliding window technique for active pixels
+offset_from_center, left_line, right_line, y_axis_values = setup_lines(binary_warped_test, left_line,
+                                                                       right_line)
 
-# Calculate left, right line attributes and distance from lane centre.
-offset_from_center, left_line, right_line, y_axis = fit_sliding_windows_lines_to_lanes(top_down_binary_warp,
-                                                                                       left_line, right_line)
+# Best fit the left and right lines
+best_left_fit_x, y_axis_values, best_right_fit_x = calc_deg_2_polynomial_with_left_right_fit_x_coefficients(
+    binary_warped_test,
+    left_line.current_fit,
+    right_line.current_fit)
 
-# Create y-axis numbers aka 720 evenly spaced numbers from 0 to 719.
-# Note : top_down_warped_binary_stacked.shape : (720, 1280)
-y_axis = np.linspace(0, top_down_binary_warp.shape[0] - 1, top_down_binary_warp.shape[0])
-create_current_fit_degree_2_polynomials(y_axis, left_line, right_line)
+# Highlight pixels in green (left) and blue (right) on test image
+out_img = highlight_detected_line_pixels(binary_warped_test, left_line, right_line)
 
-# out_img will have red coloured left SlidingWindows, blue coloured right SlidingWindows
-out_img = np.dstack((top_down_binary_warp, top_down_binary_warp, top_down_binary_warp)) * 255
-out_img[left_line.all_y, left_line.all_x] = [255, 0, 0]
-out_img[right_line.all_y, right_line.all_x] = [0, 0, 255]
+# Get the x, y plotting coordinates
+left_points, right_points = create_x_y_line_coordinates(left_line, right_line, y_axis_values)
 
-left_points = np.array(np.column_stack((left_line.recent_x_fitted[0], y_axis)))
-print("left_points :", left_points)
-right_points = np.array(np.column_stack((right_line.recent_x_fitted[0], y_axis)))
-print("right_points :", right_points)
+# Iteratively plot left, right polynomial points to make yellow lines
+draw_polynomial_line(left_points)
+draw_polynomial_line(right_points)
 
-draw_fitted_line(left_points)
-draw_fitted_line(right_points)
-plt.imsave('output_images/fitted_line.jpg', out_img)
+# Save result and plot to screen
+plt.imsave('output_images/polynomial_fitted.jpg', out_img)
 plt.xlim(0, 1280)
 plt.ylim(720, 0)
 plt.imshow(out_img)
 
-# ------------------
-# 6.2 ... vehicle position with respect to centre.
 
-# ------------------
+# =====
+# ### 6.2 ... vehicle position with respect to center.
+
+# =====
 def check_lane_lines_are_parallel(left_line_fit_x, right_line_fit_x):
     """
     Check that the difference in line absolute values is less than 100.
@@ -723,7 +808,7 @@ def check_lane_lines_are_parallel(left_line_fit_x, right_line_fit_x):
         return False
 
 
-# ------------------
+# =====
 def check_lane_lines_have_expected_distance(left_line_fit_x, right_line_fit_x):
     """
     Check distance between left and right top-down projected lines is within range.
@@ -739,359 +824,371 @@ def check_lane_lines_have_expected_distance(left_line_fit_x, right_line_fit_x):
         return False
 
 
-# ------------------
-def check_we_have_not_lost_sight_of_lines(left_line_to_check, right_line_to_check, top_down_bin_warp):
+# =====
+def find_lane_polynomial_indices_within_window_margins(active_pxs_x, active_pxs_y, left_fit, right_fit,
+                                                       window_width_margin):
     """
-    If have lost sight of lines, re-fit sliding windows.
-    :param left_line_to_check: left line object
-    :param right_line_to_check: right line object
-    :param top_down_bin_warp: perspective to operate on, Shape == (720, 1280)
-    :return: existing, else updated lines
+    Calculate degree-2 polynomial left / right fit for active x / y pixels within a window margin
+
+    e.g. p(x) = p[0]        *  x            **deg + p[1]        * x            + p[deg]      +/- window_width_margin
+                left_fit[0] * (active_pxs_y ** 2) + left_fit[1] * active_pxs_y + left_fit[2] +/- window_width_margin
+
+    :param active_pxs_x: active pixels in x direction
+    :param active_pxs_y: active pixels in y direction
+    :param left_fit: best fit left line positions
+    :param right_fit: best fit right line positions
+    :param window_width_margin: sliding window width margin range to search within
+    :return: new left / right lane line pixel positions
     """
-    if len(left_line_to_check.recent_x_fitted) or len(right_line_to_check.recent_x_fitted) == 0:
-        centre_offset, left_line_to_check, right_line_to_check, y_values = fit_sliding_windows_lines_to_lanes(
-            top_down_bin_warp, left_line_to_check,
-            right_line_to_check)
-    return left_line_to_check, right_line_to_check
+    left_lane_inds = (
+        (active_pxs_x > (
+            left_fit[0] * (active_pxs_y ** 2) + left_fit[1] * active_pxs_y + left_fit[
+                2] - window_width_margin)) & (
+            active_pxs_x < (left_fit[0] * (active_pxs_y ** 2) + left_fit[1] * active_pxs_y + left_fit[
+                2] + window_width_margin)))
+    right_lane_inds = (
+        (active_pxs_x > (right_fit[0] * (active_pxs_y ** 2) + right_fit[1] * active_pxs_y + right_fit[
+            2] - window_width_margin)) & (
+            active_pxs_x < (right_fit[0] * (active_pxs_y ** 2) + right_fit[1] * active_pxs_y + right_fit[
+                2] + window_width_margin)))
+    return left_lane_inds, right_lane_inds
 
 
-# ------------------
-def find_initial_non_zero_element_indices(top_down_bin_warp):
+# =====
+def search_and_update_lines(binary_warped, left_line_obj, right_line_obj, max_line_history):
     """
-    Find non-zero pixel positions.
-    :param top_down_bin_warp: perspective to operate on, Shape == (720, 1280)
-    :return: x, y position indices
+    Search and update lines in new image frame using iterative sliding window technique
+    :param binary_warped: top-down perspective of lane lines to operate on
+    :param left_line_obj: Line object to modify
+    :param right_line_obj: Line object to modify
+    :param max_line_history: history of recently fitted line positions
+    :return: modified lines, vehicle offset from lane centre, y_axis number series 0 - 719
     """
-    nonzero = top_down_bin_warp.nonzero()
-    nonzero_y = np.array(nonzero[0])
-    nonzero_x = np.array(nonzero[1])
-    return nonzero_x, nonzero_y
+    # Ensure lines have already been setup
+    if len(left_line_obj.recent_xfitted) or len(right_line_obj.recent_xfitted) == 0:
+        offset_from_center, left_line_obj, right_line_obj, y_axis = setup_lines(binary_warped, left_line_obj,
+                                                                                right_line_obj)
 
-
-# ------------------
-def find_left_lane_pixels_positions_within_margin(left_fit, margin, nonzero_x, nonzero_y):
-    """
-    Select all left pixel positions within a margin range.
-    Create a degree 2 polynomial (aka quadratic) from left_fit, nonzero_y and margin terms.
-    """
-    #          x[0] = (      p[0] *      (y[0] ** n) + p[1]        * y[0]      + p[2])       - margin
-    left_lane_index = (
-        (nonzero_x > (left_fit[0] * (nonzero_y ** 2) + left_fit[1] * nonzero_y + left_fit[2] - margin)) &
-        (nonzero_x < (left_fit[0] * (nonzero_y ** 2) + left_fit[1] * nonzero_y + left_fit[2] + margin))
-    )
-    return left_lane_index
-
-
-# ------------------
-def find_right_lane_pixels_positions_within_margins(margin, nonzero_x, nonzero_y, right_fit):
-    """
-    Select all right pixel positions within a margin range.
-    Create a degree 2 polynomial (aka quadratic) from right_fit, nonzero_y and margin terms.
-    """
-    #           x[0] = (      p[0] *      (y[0] ** n) + p[1]         * y[0]      + p[2])        - margin
-    right_lane_index = (
-        (nonzero_x > (right_fit[0] * (nonzero_y ** 2) + right_fit[1] * nonzero_y + right_fit[2] - margin)) &
-        (nonzero_x < (right_fit[0] * (nonzero_y ** 2) + right_fit[1] * nonzero_y + right_fit[2] + margin))
-    )
-    return right_lane_index
-
-
-# ------------------
-def extract_left_non_zero_pixel_positions(left_lane_index, nonzero_x, nonzero_y):
-    left_x = nonzero_x[left_lane_index]
-    left_y = nonzero_y[left_lane_index]
-    return left_x, left_y
-
-
-# ------------------
-def extract_right_non_zero_pixel_positions(nonzero_x, nonzero_y, right_lane_index):
-    right_x = nonzero_x[right_lane_index]
-    right_y = nonzero_y[right_lane_index]
-    return right_x, right_y
-
-
-# ------------------
-def best_fit_to_detected_lines(left_x, left_y, right_x, right_y):
-    """
-    Create a degree 2 polynomial (aka quadratic) that best fits by minimising the squared error
-    """
-    left_fit = np.polyfit(left_y, left_x, 2)
-    right_fit = np.polyfit(right_y, right_x, 2)
-    return left_fit, right_fit
-
-
-# ------------------
-def generate_plotting_values(left_fit, right_fit, top_down_bin_warp):
-    y_values = np.linspace(0, top_down_bin_warp.shape[0] - 1, top_down_bin_warp.shape[0])
-    left_fit_x_to_plot = left_fit[0] * y_values ** 2 + left_fit[1] * y_values + left_fit[2]
-    right_fit_x_to_plot = right_fit[0] * y_values ** 2 + right_fit[1] * y_values + right_fit[2]
-    return left_fit_x_to_plot, right_fit_x_to_plot, y_values
-
-
-# ------------------
-def limit_accrued_fitted_line_history(left_line_obj, max_stored_lines, right_line_obj):
-    if len(left_line_obj.recent_x_fitted) > max_stored_lines:  # max_stored_lines = 60
-        np.delete(left_line_obj.recent_x_fitted, 0)
-        np.delete(right_line_obj.recent_x_fitted, 0)
-
-
-# ------------------
-def search_for_and_update_lines(top_down_bin_warp, left_line_obj, right_line_obj,
-                                max_allowed_stored_lines_history):
-    """
-    Search for lines in new warped image and update line objects.
-    :param top_down_bin_warp:
-    :param left_line_obj:
-    :param right_line_obj:
-    :param max_allowed_stored_lines_history:
-    :return:
-    """
-    left_line_obj, right_line_obj = check_we_have_not_lost_sight_of_lines(left_line_obj, right_line_obj,
-                                                                          top_down_bin_warp)
-
+    # Reference the current fit
     left_fit = left_line_obj.current_fit
-    # print("left_fit[0]: ", left_fit[0])  # e.g. -0.000299906383635
-    # print("left_fit[1] : ", left_fit[1])  # e.g. 0.272966182225
-    # print("left_fit[2] : ", left_fit[2])  # e.g. 243.371212179
     right_fit = right_line_obj.current_fit
 
-    nonzero_x, nonzero_y = find_initial_non_zero_element_indices(top_down_bin_warp)
+    # Get the active pixels from the top-down view
+    active_pixels_x, active_pixels_y = find_active_x_y_pixels(binary_warped)
 
-    margin = 20
+    # Set the window margin range to apply polynomial within
+    window_width_margin = 20
 
-    left_lane_index = find_left_lane_pixels_positions_within_margin(left_fit, margin, nonzero_x, nonzero_y)
-    right_lane_index = find_right_lane_pixels_positions_within_margins(margin, nonzero_x, nonzero_y, right_fit)
+    # Fit polynomials and get the line positions
+    left_lane_indices, right_lane_indices = find_lane_polynomial_indices_within_window_margins(active_pixels_x,
+                                                                                               active_pixels_y,
+                                                                                               left_fit,
+                                                                                               right_fit,
+                                                                                               window_width_margin)
 
-    left_x, left_y = extract_left_non_zero_pixel_positions(left_lane_index, nonzero_x, nonzero_y)
-    right_x, right_y = extract_right_non_zero_pixel_positions(nonzero_x, nonzero_y, right_lane_index)
+    # Group active pixels
+    left_x_pixels, left_y_pixels, right_x_pixels, right_y_pixels = group_active_x_y_pixels(active_pixels_x,
+                                                                                           active_pixels_y,
+                                                                                           left_lane_indices,
+                                                                                           right_lane_indices)
 
-    left_fit, right_fit = best_fit_to_detected_lines(left_x, left_y, right_x, right_y)
+    # Fit a degree-2 polynomial to left and right zones
+    left_fit = np.polyfit(left_y_pixels, left_x_pixels, 2)
+    right_fit = np.polyfit(right_y_pixels, right_x_pixels, 2)
 
-    left_fit_x_to_plot, right_fit_x_to_plot, y_values = generate_plotting_values(left_fit, right_fit,
-                                                                                 top_down_bin_warp)
+    # Best fit the left and right lines
+    left_fitx, y_axis_values, right_fitx = calc_deg_2_polynomial_with_left_right_fit_x_coefficients(
+        binary_warped,
+        left_fit,
+        right_fit)
 
-    if (check_lane_lines_are_parallel(left_fit_x_to_plot,
-                                      right_fit_x_to_plot) and check_lane_lines_have_expected_distance(
-        left_fit_x_to_plot, right_fit_x_to_plot)):
+    # Sanity checking
+    if (check_lane_lines_are_parallel(left_fitx, right_fitx) and check_lane_lines_have_expected_distance(
+            left_fitx, right_fitx)):
+        left_line_obj.recent_xfitted.append(left_fitx)
+        right_line_obj.recent_xfitted.append(right_fitx)
 
-        left_line_obj.recent_x_fitted.append(left_fit_x_to_plot)
-        right_line_obj.recent_x_fitted.append(right_fit_x_to_plot)
+        # Truncate store to maximum line history
+        if len(left_line_obj.recent_xfitted) > max_line_history:
+            np.delete(left_line_obj.recent_xfitted, 0)
+            np.delete(right_line_obj.recent_xfitted, 0)
 
-        # trim the line history
-        limit_accrued_fitted_line_history(left_line_obj, max_allowed_stored_lines_history, right_line_obj)
+        # Smooth best x points
+        left_line_obj.bestx = np.average(left_line_obj.recent_xfitted, axis=0)
+        right_line_obj.bestx = np.average(right_line_obj.recent_xfitted, axis=0)
 
-        # smooth fitted line
-        left_line_obj.best_x = np.average(left_line_obj.recent_x_fitted, axis=0)
-        right_line_obj.best_x = np.average(right_line_obj.recent_x_fitted, axis=0)
+        # Update Line objects attributes
+        left_line_obj.allx = left_x_pixels
+        left_line_obj.ally = left_y_pixels
+        right_line_obj.allx = right_x_pixels
+        right_line_obj.ally = right_y_pixels
 
-        # update all values for detected line pixels
-        left_line_obj.all_x = left_x
-        left_line_obj.all_y = left_y
-        right_line_obj.all_x = right_x
-        right_line_obj.all_y = right_y
-
-        # update polynomial coefficients for the most recent fit
+        # Update current fit
         left_line_obj.current_fit = left_fit
         right_line_obj.current_fit = right_fit
-    else:  # lane lines not parallel OR invalid width between them
-        left_line_obj.lost_sight_of_lanes_count = + 1
 
-        if left_line_obj.lost_sight_of_lanes_count > max_allowed_stored_lines_history:
-            centre_offset, left_line_obj, right_line_obj, y_values = fit_sliding_windows_lines_to_lanes(
-                top_down_bin_warp, left_line_obj,
-                right_line_obj)
-            left_line_obj.lost_sight_of_lanes_count = 0
-    centre_offset = get_offset_from_center(right_fit_x_to_plot[0], left_fit_x_to_plot[0],
-                                           top_down_bin_warp.shape[1] / 2)
-    return centre_offset, left_line_obj, right_line_obj, y_values
+    else:  # lines not parallel and not expected distance
+        left_line_obj.failed_sanity_check_count = + 1
+        if (left_line_obj.failed_sanity_check_count > 60):  # may have lost sight of lane lines. Reset now.
+            offset_from_center, left_line_obj, right_line_obj, y_axis = setup_lines(binary_warped,
+                                                                                    left_line_obj,
+                                                                                    right_line_obj)
+            left_line_obj.failed_sanity_check_count = 0
+
+    offset_from_center = get_offset_from_center(right_fitx[0], left_fitx[0], binary_warped.shape[1] / 2)
+
+    return offset_from_center, left_line_obj, right_line_obj, y_axis_values
 
 
-# ------------------
-# Quick check that nothing is broken ...
-offset_from_center, left_line, right_line, y_axis = search_for_and_update_lines(top_down_binary_warp, left_line,
-                                                                                right_line, 20)
+# =====
+offset_from_center, left_line, right_line, y_axis_vals = search_and_update_lines(top_down_warped_binary_stacked,
+                                                                                 left_line,
+                                                                                 right_line, 20)
 
-# ------------------
-# TODO REFACTOR FROM HERE DOWN !
-def find_curv_pix(y_values, left_line_obj, right_line_obj):
-    # Define y-value where we want radius of curvature
-    # I'll choose the maximum y-value, corresponding to the bottom of the image
+
+# =====
+def test_curve_radius_calc(y_axis_values, left_line_obj, right_line_obj):
+    """
+    Assertion tests used periodically to check I haven't broken my code
+    :param y_axis_values: will use value 719
+    :param left_line_obj: Line object
+    :param right_line_obj: Line object
+    """
     left_fit = left_line_obj.current_fit
     right_fit = right_line_obj.current_fit
-    y_eval = np.max(y_values)
-    #               R = ((1 + (                  dy/dx               ) ^  2) ^  3/2) / |d^2y/dx^2|
+    y_eval = np.max(y_axis_values)
     left_curve_radius = ((1 + (2 * left_fit[0] * y_eval + left_fit[1]) ** 2) ** 1.5) / np.absolute(
         2 * left_fit[0])
     right_curve_radius = ((1 + (2 * right_fit[0] * y_eval + right_fit[1]) ** 2) ** 1.5) / np.absolute(
         2 * right_fit[0])
     print(left_curve_radius, right_curve_radius)
+    # print("int(left_curve_radius) : ", int(left_curve_radius))
+    # print("int(right_curve_radius) :", int(right_curve_radius))
+    assert (6890 > int(left_curve_radius) > 6888)
+    assert (20825 > int(right_curve_radius) > 20823)
 
 
-# ------------------
-find_curv_pix(y_axis, left_line, right_line)  # e.g. 1730.24402261 1349.2995529
+# =====
+test_curve_radius_calc(y_axis_vals, left_line, right_line)
 
 
-# ------------------
-def find_curv_real(left_line_obj, right_line_obj, y_values):
-    # Define conversions in x and y from pixels space to meters
-    left_line_x = left_line_obj.all_x
-    left_line_y = left_line_obj.all_y
-    right_x = right_line_obj.all_x
-    right_y = right_line_obj.all_y
-    ym_per_pix = 30 / 720  # meters per pixel in y dimension
-    xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
-    y_eval = np.max(y_values)
-    left_fit_cr = np.polyfit(left_line_y * ym_per_pix, left_line_x * xm_per_pix, 2)
-    right_fit_cr = np.polyfit(right_y * ym_per_pix, right_x * xm_per_pix, 2)
-    # Calculate the new radii of curvature
+# =====
+def convert_and_calc_curvature_radii(left_line_obj, right_line_obj, y_axis_values):
+    """
+    Convert x, y from pixels to metres, calc new left and right lane radii
+    :param left_line_obj: access the Line object attributes
+    :param right_line_obj: access the Line object attributes
+    :param y_axis_values: number series from 0 - 719 representing image y-axis
+    :return: curve radii
+    """
+    # Get latest line attributes
+    left_x = left_line_obj.allx
+    left_y = left_line_obj.ally
+    right_x = right_line_obj.allx
+    right_y = right_line_obj.ally
+
+    # Calc metres per pixel of lane length and width
+    y_metres_per_pix = 30 / 720  # metres per pixel calc
+    x_metres_per_pix = 3.7 / 700  # metres per pixel calc
+
+    # Get bottom of image from y values aka 719
+    y_max = np.max(y_axis_values)
+
+    # Calc and least squares error fit the degree-2 polynomials
+    left_fit_metres_per_pixel = np.polyfit(left_y * y_metres_per_pix, left_x * x_metres_per_pix, 2)
+    right_fit_metres_per_pixel = np.polyfit(right_y * y_metres_per_pix, right_x * x_metres_per_pix, 2)
+
+    # Calc new curvature radius for left and right
     left_curve_radius = ((1 + (
-        2 * left_fit_cr[0] * y_eval * ym_per_pix + left_fit_cr[1]) ** 2) ** 1.5) / np.absolute(
-        2 * left_fit_cr[0])
-    right_curverad = ((1 + (
-        2 * right_fit_cr[0] * y_eval * ym_per_pix + right_fit_cr[1]) ** 2) ** 1.5) / np.absolute(
-        2 * right_fit_cr[0])
-    # Now our radius of curvature is in meters
-    # print(left_curve_radius, 'm', right_curverad, 'm')
-    # print (len(rightx), ' ', len(righty))
-    return left_curve_radius, right_curverad
-    # Example values: 632.1 m    626.2 m
+        2 * left_fit_metres_per_pixel[0] * y_max * y_metres_per_pix + left_fit_metres_per_pixel[
+            1]) ** 2) ** 1.5) / np.absolute(
+        2 * left_fit_metres_per_pixel[0])
+    right_curve_radius = ((1 + (
+        2 * right_fit_metres_per_pixel[0] * y_max * y_metres_per_pix + right_fit_metres_per_pixel[
+            1]) ** 2) ** 1.5) / np.absolute(
+        2 * right_fit_metres_per_pixel[0])
+
+    print("left_curve_radius :", "{0:.0f}".format(left_curve_radius), "metres")
+    print("right_curve_radius :", "{0:.0f}".format(right_curve_radius), "metres")
+    return left_curve_radius, right_curve_radius
 
 
-# ------------------
-find_curv_real(left_line, right_line, y_axis)  # e.g. (547.92457013247042, 336.99267665542919)
-
-# ------------------
-# Quick check that nothing is broken ...
-offset_from_center, left_line, right_line, y_axis = fit_sliding_windows_lines_to_lanes(top_down_binary_warp,
-                                                                                       left_line, right_line)
-
-# ------------------
-""" 6.2 vehicle position with respect to center. """
-
-# def get_offset_from_center(right_x, left_x, midpoint):
-#     return (3.7 / 700) * abs(((right_x - left_x) / 2) + left_x - midpoint)
+# =====
+convert_and_calc_curvature_radii(left_line, right_line, y_axis_vals)
 
 
-# def are_roughly_parallel(left_fitx, right_fitx):
-#     if abs((right_fitx[0] - left_fitx[0]) - (right_fitx[-1] - left_fitx[-1])) < 100:
-#         return True
-#     else:
-#         return False
+# =====
+# 7. Warp the detected lane boundaries back onto the original image.
 
+# =====
+def create_image_base(dist, dst, img, left_line_obj, mtx, result, right_line_obj, src):
+    """
+    Colour base image used to draw lane polygon onto
 
-# def have_proper_distance(left_fitx, right_fitx):
-#     if (570 < (right_fitx[0] - left_fitx[0]) < 820) and (570 < (right_fitx[-1] - left_fitx[-1]) < 820):
-#         return True
-#     else:
-#         return False
-
-
-# ------------------
-
-""" 7. Warp the detected lane boundaries back onto the original image. """
-
-# ------------------
-
-""" 8. Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position. """
-
-
-def draw_lane(img, mtx, dist, src, top_down_polygon, dst, y_values, left_line, right_line):
-    # Create an image to draw the lines on
-    left_fitx = left_line.recent_x_fitted[-1]
-    right_fitx = right_line.recent_x_fitted[-1]
+    :param dist: distortion coefficients
+    :param dst: destination points where warp transforms to
+    :param img: stacked binary thresholded image that includes saturation, gradient direction, colour intensity
+    :param left_line_obj:
+    :param mtx: camera attributes matrix
+    :param result: grad_sat_bin_image and stacked_s_g_c_bin_image from colour_image_transformation_pipeline
+    :param right_line_obj:
+    :param src: source points where warp transforms from
+    :return: warped colour image
+    """
+    left_fit_x = left_line_obj.recent_xfitted[-1]  # most recent fitted line
+    right_fit_x = right_line_obj.recent_xfitted[-1]  # most recent fitted line
     undistorted = undistort_image(img, mtx, dist)
-    Minv, top_down_bin_warp = warp_perspective_to_top_down(src, top_down_polygon, dst)
-    warp_zero = np.zeros_like(top_down_bin_warp).astype(np.uint8)
-    color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+    matrix_transform_inversed_stacked, binary_warped = warp_perspective_to_top_down(src, result[1], dst)
+    warp_zero = np.zeros_like(binary_warped).astype(np.uint8)
+    colour_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+    return colour_warp, left_fit_x, matrix_transform_inversed_stacked, right_fit_x, undistorted
+
+
+# =====
+def draw_filled_polygon(img, mtx, dist, src, result, dst, y_axis_values, left_line_obj, right_line_obj):
+    """
+    Project green filled fitted polygon onto undistorted image.
+
+    :param img: stacked binary thresholded image that includes saturation, gradient direction, colour intensity
+    :param mtx: camera attributes matrix
+    :param dist: distortion coefficients
+    :param src: source points where warp transforms from
+    :param result: grad_sat_bin_image and stacked_s_g_c_bin_image from colour_image_transformation_pipeline
+    :param dst: destination points where warp transforms to
+    :param y_axis_values: number series from 0 - 719 representing image y-axis
+    :param left_line_obj: access the Line object attributes
+    :param right_line_obj: access the Line object attributes
+    :return: overlay inverted colour warp  with filled polygon ontop of undistorted image
+    """
+    # Create image to draw lines onto
+    color_warp, left_fit_x, matrix_transform_inversed_stacked, right_fit_x, undistorted = create_image_base(
+        dist, dst, img, left_line_obj, mtx, result, right_line_obj, src)
+
     # Recast the x and y points into usable format for cv2.fillPoly()
-    # print(y_values, '  ', left_fitx)
-    pts_left = np.array([np.transpose(np.vstack([left_fitx, y_values]))])
-    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, y_values])))])
+    pts_left = np.array([np.transpose(np.vstack([left_fit_x, y_axis_values]))])
+    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fit_x, y_axis_values])))])
     pts = np.hstack((pts_left, pts_right))
-    # Draw the lane onto the warped blank image
+
+    # Draw green lane onto warped base image
     cv2.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
-    # Warp the blank back to original image space using inverse perspective matrix (Minv)
-    newwarp = cv2.warpPerspective(color_warp, Minv, (img.shape[1], img.shape[0]))
-    # if (cv2.matchShapes(newwarp, prev_warp, 1, 0.0) > 0.01):
-    #    newwarp = prev_warp
-    # else:
-    #    prev_warp = new_warp
-    # Combine the top_down_polygon with the original image
-    result = cv2.addWeighted(undistorted, 1, newwarp, 0.3, 0)
-    # plt.imshow(result)
+
+    # Warp the base back to original perspective using inverse perspective matrix
+    original_perspective = cv2.warpPerspective(color_warp, matrix_transform_inversed_stacked,
+                                               (img.shape[1], img.shape[0]))
+
+    # Combine the result with the original image
+    result = cv2.addWeighted(undistorted, 1, original_perspective, 0.3, 0)
     return result
 
 
+# =====
 font = cv2.FONT_HERSHEY_SIMPLEX
 
+# =====
+# 8. Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
-def print_curvature(img, left_curverad, right_curverad, offset_from_center, left_line, right_line):
-    text1 = "Radius of left Curvature= " + str(left_curverad) + ' m , right: ' + str(right_curverad)
-    text2 = "Vehicle is: " + str(offset_from_center) + ' m from the center of the lane'
-    text3 = "bottom: " + str(
-        right_line.recent_x_fitted[-1][0] - left_line.recent_x_fitted[-1][0]) + ' top: ' + str(
-        right_line.recent_x_fitted[-1][-1] - left_line.recent_x_fitted[-1][-1])
+# =====
+def image_labels(img, left_curve_rad, right_curve_rad, offset_from_centre, left_line_obj, right_line_obj):
+    """
+    Puts labels on image showing curves radii and vehicle position relative to lane centre.
+    :param img: image with filled polygon lane
+    :param left_curve_rad: left radius length
+    :param right_curve_rad: right radius length
+    :param offset_from_centre: metres vehicle is from lane centre
+    :param left_line_obj: access Line object attributes
+    :param right_line_obj: access Line object attributes
+    """
+    left_curve_rad = int(left_curve_rad)
+    right_curve_rad = int(right_curve_rad)
+    offset_from_centre = offset_from_centre
+    text1 = "Left curve radius = " + str(left_curve_rad) + ' metres , right = ' + str(right_curve_rad)
+    text2 = "Vehicle is " + str(offset_from_centre) + ' metres from lane centre'
+    text3 = "bottom = " + str(
+        right_line_obj.recent_xfitted[-1][0] - left_line_obj.recent_xfitted[-1][0]) + ' top  = ' + str(
+        right_line_obj.recent_xfitted[-1][-1] - left_line_obj.recent_xfitted[-1][-1])
     cv2.putText(img, text1, (10, 100), font, 1, (255, 255, 255), 2)
     cv2.putText(img, text2, (10, 130), font, 1, (255, 255, 255), 2)
-    # cv2.putText(img, text3,(10,160), font, 1,(255,255,255),2)
 
 
-# ------------------
-left_curverad, right_curverad = find_curv_real(left_line, right_line, y_axis)
+# =====
+# Visually test an image and store results
+left_curverad, right_curverad = convert_and_calc_curvature_radii(left_line, right_line, y_axis_vals)
 
-laned_image = draw_lane(straight_lines_image_2, c_matrix, dist_coeff, source_transformation,
-                        top_down_warped_binary_polygon,
-                        destination_transformation, y_axis,
-                        left_line, right_line)
-print_curvature(laned_image, left_curverad, right_curverad, offset_from_center, left_line, right_line)
+laned_image = draw_filled_polygon(straight_lines_image, c_matrix, dist_coeff, source_transformation, result,
+                                  destination_transformation, y_axis_vals, left_line, right_line)
+image_labels(laned_image, left_curverad, right_curverad, offset_from_center, left_line, right_line)
 
 cv2.imwrite('output_images/laned_image.jpg', laned_image)
 
 plt.imshow(laned_image)
 
-# ------------------
+# =====
 img = cv2.imread('test_images/straight_lines1.jpg')
 prev_warp = None
 left_line = Line()
 right_line = Line()
 
-# ------------------
-def Pipeline(img, mtx, dist, left_line, right_line):
+
+# =====
+def Pipeline(img, mtx, dist, left_line_obj, right_line_obj):
+    """
+    Image processing pipeline.
+
+    :param img: new frame image
+    :param mtx: camera attributes matrix
+    :param dist: destination points where warp transforms to
+    :param left_line_obj: access the Line object attributes
+    :param right_line_obj: access the Line object attributes
+    :return: laned image
+    """
+    # Undistort new image
     undistorted = undistort_image(img, mtx, dist)
-    matrix_trans_inv, top_down_warp_bin_poly = colour_image_transformation_pipeline(undistorted)
-    Minv, warped = warp_perspective_to_top_down(source_transformation, top_down_warp_bin_poly,
-                                                destination_transformation)
-    offset_from_center, left_line, right_line, y_values = search_for_and_update_lines(warped, left_line,
-                                                                                      right_line, 60)
-    laned_image = draw_lane(undistorted, mtx, dist, source_transformation, top_down_warp_bin_poly,
-                            destination_transformation,
-                            y_values, left_line, right_line)
-    left_curverad, right_curverad = find_curv_real(left_line, right_line, y_values)
-    print_curvature(laned_image, left_curverad, right_curverad, offset_from_center, left_line, right_line)
+
+    # Apply vision tranformations
+    result = colour_image_transformation_pipeline(undistorted)
+
+    # Flip to top-down perspective
+    matrix_transform_inversed_stacked, warped = warp_perspective_to_top_down(source_transformation, result[1],
+                                                                             destination_transformation)
+
+    # Update lines using sliding windows technique
+    offset_from_center, left_line_obj, right_line_obj, y_axis = search_and_update_lines(warped, left_line_obj,
+                                                                                        right_line_obj, 60)
+
+    # Project filled green polygon
+    laned_image = draw_filled_polygon(undistorted, mtx, dist, source_transformation, result,
+                                      destination_transformation,
+                                      y_axis, left_line_obj, right_line_obj)
+
+    # Calculate and left / right radii and apply to image
+    left_curverad, right_curverad = convert_and_calc_curvature_radii(left_line_obj, right_line_obj, y_axis)
+
+    # Apply calculation results to image
+    image_labels(laned_image, left_curverad, right_curverad, offset_from_center, left_line_obj,
+                 right_line_obj)
     return laned_image
 
 
-# ------------------
-# Pipeline(img, c_matrix, dist_coeff, left_fit, right_fit)
-Pipeline(img, c_matrix, dist_coeff, left_line.current_fit, right_line.current_fit)
-
-# ------------------
-# TODO : THIS COULD MEAN I NEED TO CREATE NEW FUNCTION SIGNATURE TO RETURN A TUPLE OF NDARRAYS.
+# =====
 def process_image(img):
+    """
+    Reference called by VideoFileClip processor
+    :param img: new frame to process
+    :return: processed image to render
+    """
     result = Pipeline(img, c_matrix, dist_coeff, left_line, right_line)
     return result
 
 
-# ------------------
+# =====
 # Import everything needed to edit/save/watch video clips
 from moviepy.editor import VideoFileClip
 from IPython.display import HTML
 
-white_output = 'processed.mp4'
-clip1 = VideoFileClip("CarND-Advanced-Lane-Lines-master/project_video.mp4")
-# TODO test assumption that 'process_image' is calling function 'process_image(img)' above. If so, create new signature function to fix
-white_clip = clip1.fl_image(process_image)  # NOTE: this function expects color images!!
-% time
-white_clip.write_videofile(white_output, audio=False)
+# white_output = 'processed.mp4'
+# clip1 = VideoFileClip("project_video.mp4")
+# white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
+# #%time white_clip.write_videofile(white_output, audio=False)
+# white_clip.write_videofile(white_output, audio=False)
 
-# ------------------
+# =====
