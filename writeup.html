@@ -16423,18 +16423,19 @@ YII=
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">sobel_gradient_direction</span><span class="p">(</span><span class="n">copy_of_colour_image</span><span class="p">,</span> <span class="n">sobel_kernel</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">     Define a function that applies Sobel x and y, then computes the direction (radians) of the gradient.</span>
+<span class="sd">    Rescale absolute sobel gradients in x direction.</span>
+<span class="sd">    REMOVED : Define a function that applies Sobel x and y, then computes the direction (radians) of the gradient.</span>
 <span class="sd">    :param copy_of_colour_image: to process</span>
 <span class="sd">    :param sobel_kernel: window size for calculating x and y gradients, cv2.Sobel default = 3 if no param</span>
 <span class="sd">    :return:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">gray</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">copy_of_colour_image</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2GRAY</span><span class="p">)</span>
     <span class="n">sobel_x</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">Sobel</span><span class="p">(</span><span class="n">gray</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">CV_64F</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ksize</span><span class="o">=</span><span class="n">sobel_kernel</span><span class="p">)</span>
-    <span class="c1"># Note : from video code, couldn&#39;t get np.arctan2() to produce usable results, so simply scaling instead.</span>
+    <span class="c1"># Note : from video lesson code, couldn&#39;t get np.arctan2() to produce usable results, so simply rescaling instead.</span>
     <span class="c1"># sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=sobel_kernel)</span>
     <span class="c1"># abs_grad_dir = np.arctan2(np.absolute(sobel_y), np.absolute(sobel_x))  # radians aka approx. angles</span>
     <span class="n">abs_grad_dir</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span>
-        <span class="mi">255</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">sobel_x</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">sobel_x</span><span class="p">)))</span>  <span class="c1"># rescale down to 8 bit integer</span>
+        <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">sobel_x</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">sobel_x</span><span class="p">))</span> <span class="o">*</span> <span class="mi">255</span><span class="p">)</span>  <span class="c1"># rescale down to 8 bit integer</span>
     <span class="c1"># print(&quot;np.absolute(sobel_x) :&quot;, np.absolute(sobel_x))</span>
     <span class="c1"># print(&quot;np.max(np.absolute(sobel_x) :&quot;, np.max(np.absolute(sobel_x)))</span>
     <span class="c1"># print(&quot;abs_grad_dir :&quot;, abs_grad_dir)</span>
@@ -16949,7 +16950,7 @@ TkSuQmCC
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[19]:</div>
+<div class="prompt input_prompt">In&nbsp;[51]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Get image 2D size</span>
@@ -16958,9 +16959,11 @@ TkSuQmCC
 
 <span class="c1"># Set 4 corners of warp source polygon</span>
 <span class="n">define_source_polygon</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;source_transformation points :&quot;</span><span class="p">,</span> <span class="n">source_transformation</span><span class="p">)</span>
 
 <span class="c1"># Set 4 corners of warp destination polygon</span>
 <span class="n">define_destination_polygon</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;destination_transformation points :&quot;</span><span class="p">,</span> <span class="n">destination_transformation</span><span class="p">)</span>
 
 <span class="c1"># Create polygon overlayed onto undistorted image</span>
 <span class="n">polygon</span><span class="p">()</span>
@@ -16997,7 +17000,15 @@ TkSuQmCC
 <div class="prompt"></div>
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>top_down_warped_binary_polygon.shape : (720, 1280, 3)
+<pre>source_transformation points : [[  585.           460.        ]
+ [  203.33332825   720.        ]
+ [ 1126.66662598   720.        ]
+ [  695.           460.        ]]
+destination_transformation points : [[ 320.    0.]
+ [ 320.  720.]
+ [ 960.  720.]
+ [ 960.    0.]]
+top_down_warped_binary_polygon.shape : (720, 1280, 3)
 top_down_warped_binary_stacked.shape : (720, 1280)
 </pre>
 </div>
@@ -20429,22 +20440,22 @@ oDczazkHvZlZyznozcxazkFvZtZy/w9BcEf6ebwQGAAAAABJRU5ErkJggg==
 <span class="sd">    :param y_axis_values: number series from 0 - 719 representing image y-axis</span>
 <span class="sd">    :param left_line_obj: access the Line object attributes</span>
 <span class="sd">    :param right_line_obj: access the Line object attributes</span>
-<span class="sd">    :return: overlay inverted colour warp  with filled polygon ontop of undistorted image</span>
+<span class="sd">    :return: overlay inverted colour warp with filled polygon ontop of undistorted image</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Create image to draw lines onto</span>
-    <span class="n">color_warp</span><span class="p">,</span> <span class="n">left_fit_x</span><span class="p">,</span> <span class="n">matrix_transform_inversed_stacked</span><span class="p">,</span> <span class="n">right_fit_x</span><span class="p">,</span> <span class="n">undistorted</span> <span class="o">=</span> <span class="n">create_image_base</span><span class="p">(</span>
+    <span class="n">colour_warp</span><span class="p">,</span> <span class="n">left_fit_x</span><span class="p">,</span> <span class="n">matrix_transform_inversed_stacked</span><span class="p">,</span> <span class="n">right_fit_x</span><span class="p">,</span> <span class="n">undistorted</span> <span class="o">=</span> <span class="n">create_image_base</span><span class="p">(</span>
         <span class="n">dist</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">left_line_obj</span><span class="p">,</span> <span class="n">mtx</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">right_line_obj</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
 
-    <span class="c1"># Recast the x and y points into usable format for cv2.fillPoly()</span>
+    <span class="c1"># Transpose x and y points for cv2.fillPoly() use</span>
     <span class="n">pts_left</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">left_fit_x</span><span class="p">,</span> <span class="n">y_axis_values</span><span class="p">]))])</span>
     <span class="n">pts_right</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">right_fit_x</span><span class="p">,</span> <span class="n">y_axis_values</span><span class="p">])))])</span>
     <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">pts_left</span><span class="p">,</span> <span class="n">pts_right</span><span class="p">))</span>
 
     <span class="c1"># Draw green lane onto warped base image</span>
-    <span class="n">cv2</span><span class="o">.</span><span class="n">fillPoly</span><span class="p">(</span><span class="n">color_warp</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">([</span><span class="n">pts</span><span class="p">]),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">cv2</span><span class="o">.</span><span class="n">fillPoly</span><span class="p">(</span><span class="n">colour_warp</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">([</span><span class="n">pts</span><span class="p">]),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
     <span class="c1"># Warp the base back to original perspective using inverse perspective matrix</span>
-    <span class="n">original_perspective</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">warpPerspective</span><span class="p">(</span><span class="n">color_warp</span><span class="p">,</span> <span class="n">matrix_transform_inversed_stacked</span><span class="p">,</span>
+    <span class="n">original_perspective</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">warpPerspective</span><span class="p">(</span><span class="n">colour_warp</span><span class="p">,</span> <span class="n">matrix_transform_inversed_stacked</span><span class="p">,</span>
                                                <span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
 
     <span class="c1"># Combine the result with the original image</span>

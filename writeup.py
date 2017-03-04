@@ -151,18 +151,19 @@ compare_raw_distorted_against_undistorted_images(calibration_img, undistorted_ca
 # =====
 def sobel_gradient_direction(copy_of_colour_image, sobel_kernel=3):
     """
-     Define a function that applies Sobel x and y, then computes the direction (radians) of the gradient.
+    Rescale absolute sobel gradients in x direction.
+    REMOVED : Define a function that applies Sobel x and y, then computes the direction (radians) of the gradient.
     :param copy_of_colour_image: to process
     :param sobel_kernel: window size for calculating x and y gradients, cv2.Sobel default = 3 if no param
     :return:
     """
     gray = cv2.cvtColor(copy_of_colour_image, cv2.COLOR_RGB2GRAY)
     sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
-    # Note : from video code, couldn't get np.arctan2() to produce usable results, so simply scaling instead.
+    # Note : from video lesson code, couldn't get np.arctan2() to produce usable results, so simply rescaling instead.
     # sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=sobel_kernel)
     # abs_grad_dir = np.arctan2(np.absolute(sobel_y), np.absolute(sobel_x))  # radians aka approx. angles
     abs_grad_dir = np.uint8(
-        255 * (np.absolute(sobel_x)) / np.max(np.absolute(sobel_x)))  # rescale down to 8 bit integer
+        (np.absolute(sobel_x)) / np.max(np.absolute(sobel_x)) * 255)  # rescale down to 8 bit integer
     # print("np.absolute(sobel_x) :", np.absolute(sobel_x))
     # print("np.max(np.absolute(sobel_x) :", np.max(np.absolute(sobel_x)))
     # print("abs_grad_dir :", abs_grad_dir)
@@ -361,9 +362,11 @@ img_size = (undistorted_straight_lines.shape[1], undistorted_straight_lines.shap
 
 # Set 4 corners of warp source polygon
 define_source_polygon()
+# print("source_transformation points :", source_transformation)
 
 # Set 4 corners of warp destination polygon
 define_destination_polygon()
+# print("destination_transformation points :", destination_transformation)
 
 # Create polygon overlayed onto undistorted image
 polygon()
@@ -1030,7 +1033,7 @@ def create_image_base(dist, dst, img, left_line_obj, mtx, result, right_line_obj
     :param img: stacked binary thresholded image that includes saturation, gradient direction, colour intensity
     :param left_line_obj:
     :param mtx: camera attributes matrix
-    :param result: grad_sat_bin_image and stacked_s_g_c_bin_image from colour_image_transformation_pipeline
+    :param result: [0]grad_sat_bin_image and [1]stacked_s_g_c_bin_image from colour_image_transformation_pipeline
     :param right_line_obj:
     :param src: source points where warp transforms from
     :return: warped colour image
@@ -1058,22 +1061,22 @@ def draw_filled_polygon(img, mtx, dist, src, result, dst, y_axis_values, left_li
     :param y_axis_values: number series from 0 - 719 representing image y-axis
     :param left_line_obj: access the Line object attributes
     :param right_line_obj: access the Line object attributes
-    :return: overlay inverted colour warp  with filled polygon ontop of undistorted image
+    :return: overlay inverted colour warp with filled polygon ontop of undistorted image
     """
     # Create image to draw lines onto
-    color_warp, left_fit_x, matrix_transform_inversed_stacked, right_fit_x, undistorted = create_image_base(
+    colour_warp, left_fit_x, matrix_transform_inversed_stacked, right_fit_x, undistorted = create_image_base(
         dist, dst, img, left_line_obj, mtx, result, right_line_obj, src)
 
-    # Recast the x and y points into usable format for cv2.fillPoly()
+    # Transpose x and y points for cv2.fillPoly() use
     pts_left = np.array([np.transpose(np.vstack([left_fit_x, y_axis_values]))])
     pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fit_x, y_axis_values])))])
     pts = np.hstack((pts_left, pts_right))
 
     # Draw green lane onto warped base image
-    cv2.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
+    cv2.fillPoly(colour_warp, np.int_([pts]), (0, 255, 0))
 
     # Warp the base back to original perspective using inverse perspective matrix
-    original_perspective = cv2.warpPerspective(color_warp, matrix_transform_inversed_stacked,
+    original_perspective = cv2.warpPerspective(colour_warp, matrix_transform_inversed_stacked,
                                                (img.shape[1], img.shape[0]))
 
     # Combine the result with the original image
