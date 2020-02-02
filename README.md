@@ -1,12 +1,9 @@
-#Advanced Lane Finding
-
+# Advanced Lane Finding
 This project covers camera calibration, colour and gradient thresholding, applied geometry (calculating the radii of left and right lane ‘circles’) / algebra (degree-2 polynomials fit to left and right lanes) and tracking detected lanes using the Sliding Window technique.
 
 The result is a coloured (green), filled polygon to highlight the detected road lane.
 
-
-##The Project
-
+## The Project
 The approach of this project is the following:
 
 - Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
@@ -18,16 +15,14 @@ The approach of this project is the following:
 - Warp the detected lane boundaries back onto the original image.
 - Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
-
-##How I computed the camera matrix and distortion coefficients.
-
+## How I computed the camera matrix and distortion coefficients.
 The code for this step is contained in section 1. of the Jupyter notebook located in "./writeup.ipynb" (note : the file called writeup.py will run the entire notebook code).
 
 I started by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world - see find_corner_coordinates_and_map_to_reference_chessboard function. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image. Thus, objp is just a replicated array of coordinates, and Points.objpoints will be appended with a copy of it every time I successfully detect all chessboard corners in a test image. Points.imgpoints will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.
 
 I then used the output Points.objpoints and Points.imgpoints to compute the camera calibration and distortion coefficients using cv2.calibrateCamera() - see calculate_camera_distortion_coefficients function. I applied this distortion correction to the test image using cv2.undistort_image() - see section 2.
 
-##Pipeline (single images)
+## Pipeline (single images)
 
 - I used color transforms, gradients or other methods to create a thresholded binary image.
 - I used a combination of color and gradient thresholds to generate a binary image.
